@@ -6,6 +6,7 @@ Created on Thu Mar 18 13:20:25 2021
 """
 
 import math
+import numpy as np
 
 def interp(val, array_value, array_ref):
     """
@@ -217,17 +218,20 @@ class mix:
 
     def add_amount(self, add_amount):
         """
-        This function add/remove for each component at the same time
+        This function add/remove for each component at the same time and return
+        an array with the quantities added to each component
         """
 
         tot_amount = 0
-
+        array_tr = np.zeros((len(self.list_component)))
         for comp in self.list_component:
             tot_amount += comp.amount
 
-        for comp in self.list_component:
-            comp.amount += add_amount * (comp.amount/tot_amount)
-
+        for i in range(0, len(self.list_component)):
+            amount = add_amount * (self.list_component[i].amount/tot_amount)
+            self.list_component[i].amount += amount
+            array_tr[i] = amount
+        return array_tr
 
 
     def get_density(self, T):
@@ -243,8 +247,24 @@ class mix:
         return interp(T, self.viscosity, self.viscosity_T)
 
 
+    def get_emulsion_density(self, T, array_in_emulsion):
+        """
+        Return the density by taking into account each component, T is the temperature,
+        array_in_emulsion is an array with the amount of each component in emulsion.
+        """
+        water_volume = 0
+        water_density = 1020
+        oil_volume = 0
+        oil_mass = 0
+        for i in range(0, len(self.list_component)):
+            component_density = self.list_component[i].get_density(T)
+            if component_density is None :
+                return None
+            oil_volume += (self.list_component[i].amount+array_in_emulsion[i])
+            oil_mass += (self.list_component[i].amount+array_in_emulsion[i]) * component_density
+            water_volume += array_in_emulsion[i] *(self.max_water/(1-self.max_water))
 
-
+        return (oil_mass+water_volume*1020)/(oil_volume+water_volume)
 
 
 class component:

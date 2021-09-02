@@ -87,7 +87,7 @@ def plot_matrix_mix(mix, matrix, percent = False):
         plt.plot(matrix[:,0]/3600,matrix[:,4]/sum*100)
         plt.plot(matrix[:,0]/3600,matrix[:,5]/sum*100)
         plt.plot(matrix[:,0]/3600,matrix[:,6]/sum*100)
-        plt.ylabel('%')
+        plt.ylabel('% (Volume)')
         plt.ylim([0, matrix[0,1]]/sum*100)
     else :
         plt.plot(matrix[:,0]/3600,matrix[:,1])
@@ -147,6 +147,8 @@ def all_process(mix, temperature, wind_speed, sim_length, dt, water_volume,
 
     """
 
+    array_in_emulsion = np.zeros((len(mix.list_component)))
+
     time_step_amount = int(sim_length / dt)
     matrix = np.zeros((int(time_step_amount),8))
 
@@ -179,7 +181,7 @@ def all_process(mix, temperature, wind_speed, sim_length, dt, water_volume,
                 comp_area = comp.amount / matrix[i-1,1] * area
                 if comp.amount > 0 :
                     fract = mix.get_molar_fract(comp)
-                    if comp.boiling_T < 1000:
+                    if comp.boiling_T < 1000 and ev.find_vapor_pressure(comp, temperature) > 0:
                     #evaporation pseudo component
                         flux = 0
                         #OILTRANS
@@ -189,7 +191,7 @@ def all_process(mix, temperature, wind_speed, sim_length, dt, water_volume,
                             #k from mw
                             k_evp = ev.mass_transfer_coefficient_OILTRANS(wind_speed, length,
                                                   schmdt_nmbr_air)
-                            flux = ev.evap_volume_OILTRANS(k_evp, comp_area, p_oil,
+                            flux = ev.evap_volume_OILTRANS(k_evp, area, p_oil,
                                                           molar_v,temperature,
                                                           molar_fraction = fract)
                         #ALOHA
@@ -204,7 +206,8 @@ def all_process(mix, temperature, wind_speed, sim_length, dt, water_volume,
                             flux = 0
                             if comp.partial_P is not None:
                                 cs = ev.vapor_phase_sat_conc(comp.molar_weight, comp.partial_P,
-                                                          temperature)
+                                                              ev.find_vapor_pressure(comp, temperature),
+                                                              temperature)
                                 flux = (ev.evap_mass_flux_ALOHA(cs, wind_friction, k)
                                         * comp_area / comp.density)
                         #print(comp.amount)
@@ -294,7 +297,7 @@ def all_process(mix, temperature, wind_speed, sim_length, dt, water_volume,
                             * ( matrix[i-1,6] +  mix.get_prop(temperature).amount))
                     if mix.get_prop(temperature).amount < flux:
                         flux = mix.get_prop(temperature).amount
-                    mix.add_amount(-flux)
+                    array_in_emulsion -= mix.add_amount(-flux)
                     emul_fl += flux
         prop = mix.get_prop(temperature)
         matrix[i,1] = prop.amount
@@ -303,7 +306,7 @@ def all_process(mix, temperature, wind_speed, sim_length, dt, water_volume,
         matrix[i,4] = bio_fl  + matrix[i-1,4]
         matrix[i,5] = phot_fl  + matrix[i-1,5]
         matrix[i,6] = emul_fl  + matrix[i-1,6]
-        matrix[i,7] = prop.density
+        matrix[i,7] = mix.get_emulsion_density(temperature,array_in_emulsion)
     return matrix
 
 
