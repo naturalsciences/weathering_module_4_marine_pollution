@@ -247,24 +247,34 @@ class mix:
         return interp(T, self.viscosity, self.viscosity_T)
 
 
-    def get_emulsion_density(self, T, array_in_emulsion):
+    def get_array_amount(self):
         """
-        Return the density by taking into account each component, T is the temperature,
-        array_in_emulsion is an array with the amount of each component in emulsion.
+        Return an array with the amount of each component [m³]
         """
-        water_volume = 0
-        water_density = 1020
-        oil_volume = 0
-        oil_mass = 0
-        for i in range(0, len(self.list_component)):
-            component_density = self.list_component[i].get_density(T)
-            if component_density is None :
-                return None
-            oil_volume += (self.list_component[i].amount+array_in_emulsion[i])
-            oil_mass += (self.list_component[i].amount+array_in_emulsion[i]) * component_density
-            water_volume += array_in_emulsion[i] *(self.max_water/(1-self.max_water))
+        array_tr = np.zeros((len(self.list_component)))
 
-        return (oil_mass+water_volume*1020)/(oil_volume+water_volume)
+        for i in range(0,len(self.list_component)):
+            array_tr[i] = self.get_comp(i).amount
+        return array_tr
+
+def get_emulsion_density(mix, T, array_in_emulsion, water_density = 1020):
+    """
+    Return the density by taking into account each component, T is the temperature,
+    array_in_emulsion is an array with the amount of each component in emulsion
+    for the first rows.
+    """
+    water_volume = 0
+    oil_volume = 0
+    oil_mass = 0
+    for i in range(0, len(mix.list_component)):
+        component_density = mix.list_component[i].get_density(T)
+        if component_density is None :
+            return None
+        oil_volume += (mix.list_component[i].amount+array_in_emulsion[i])
+        oil_mass += (mix.list_component[i].amount+array_in_emulsion[i]) * component_density
+        water_volume += array_in_emulsion[i] *(mix.max_water/(1-self.max_water))
+
+    return (oil_mass+water_volume*1020)/(oil_volume+water_volume)
 
 
 class component:

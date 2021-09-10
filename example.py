@@ -105,9 +105,10 @@ for i in range(0, int(sim_length/dt)):
     area.append((i*dt/sim_length)*area_const)
 
 #create a matrix with the state of the mix at each timestep
-#the 2 means ALOHA model and the 0 means no emulsification (cf doc of the fonction)
+#the 2 means ALOHA model
 mat = wu.all_process(mix2, temperature, wind_speed, sim_length, dt, water_volume,
-                     slick_thickness, area, 'A', 2, 0, wave_heigth)
+                     slick_thickness, fix_area=area, apply_evaporation =2,
+                     wave_height=wave_heigth)
 
 #draw the graph
 wu.plot_matrix_mix(mix2, mat)
@@ -120,7 +121,8 @@ Using emulsion with the brent blend
 """
 # deepcopy not needed because brent_blend is not used later
 mat = wu.all_process(brent_blend, temperature, wind_speed, sim_length, dt, water_volume,
-                     slick_thickness, area, 'A', 3, 1, wave_heigth)
+                     slick_thickness, fix_area = area, apply_evaporation = 3,
+                     apply_emulsion = 1, wave_height=wave_heigth)
 
 #draw the graph
 wu.plot_matrix_mix(brent_blend, mat)

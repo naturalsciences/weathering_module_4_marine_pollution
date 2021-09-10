@@ -9,6 +9,7 @@ import dissolution as di
 import photooxidation as ph
 import biodegradation as bi
 import emulsification as em
+import volatilization as vo
 import oil_utils as otl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -67,7 +68,7 @@ def plot_matrix_mix(mix, matrix, percent = False):
     Parameters
     ----------
     mix : mix represented by the matrix
-    matrix : matrix ordered following:
+    matrix : matrix ordered following (with the last row of comp being the sum):
         time [s]
         slick [m³]
         evaporated [m³]
@@ -78,26 +79,29 @@ def plot_matrix_mix(mix, matrix, percent = False):
     percent : if True, show the abcisse in percent, by default False
 
     """
-    sim_length = matrix[len(matrix)-1,0]
-    sum = matrix[0,1]+matrix[0,2]+matrix[0,3]+matrix[0,4]+matrix[0,5]+matrix[0,6]
+    ind_tot = len(mix.list_component)
+    sim_length = matrix[len(matrix)-1,0,0]
+    sum = (matrix[0,1,ind_tot]+matrix[0,2,ind_tot]+matrix[0,3,ind_tot]
+            +matrix[0,4,ind_tot]+matrix[0,5,ind_tot]+matrix[0,6,ind_tot])
     if percent:
-        plt.plot(matrix[:,0]/3600,matrix[:,1]/sum*100)
-        plt.plot(matrix[:,0]/3600,matrix[:,2]/sum*100)
-        plt.plot(matrix[:,0]/3600,matrix[:,3]/sum*100)
-        plt.plot(matrix[:,0]/3600,matrix[:,4]/sum*100)
-        plt.plot(matrix[:,0]/3600,matrix[:,5]/sum*100)
-        plt.plot(matrix[:,0]/3600,matrix[:,6]/sum*100)
+        plt.plot(matrix[:,0,0]/3600,matrix[:,1,ind_tot]/sum*100)
+        plt.plot(matrix[:,0,0]/3600,matrix[:,2,ind_tot]/sum*100)
+        plt.plot(matrix[:,0,0]/3600,matrix[:,3,ind_tot]/sum*100)
+        plt.plot(matrix[:,0,0]/3600,matrix[:,4,ind_tot]/sum*100)
+        plt.plot(matrix[:,0,0]/3600,matrix[:,5,ind_tot]/sum*100)
+        plt.plot(matrix[:,0,0]/3600,matrix[:,6,ind_tot]/sum*100)
         plt.ylabel('% (Volume)')
-        plt.ylim([0, matrix[0,1]]/sum*100)
+        plt.ylim([0, 100])
+        #plt.ylim([0, matrix[0,1,ind_tot]]/sum*100)
     else :
-        plt.plot(matrix[:,0]/3600,matrix[:,1])
-        plt.plot(matrix[:,0]/3600,matrix[:,2])
-        plt.plot(matrix[:,0]/3600,matrix[:,3])
-        plt.plot(matrix[:,0]/3600,matrix[:,4])
-        plt.plot(matrix[:,0]/3600,matrix[:,5])
-        plt.plot(matrix[:,0]/3600,matrix[:,6])
+        plt.plot(matrix[:,0,0]/3600,matrix[:,1,ind_tot])
+        plt.plot(matrix[:,0,0]/3600,matrix[:,2,ind_tot])
+        plt.plot(matrix[:,0,0]/3600,matrix[:,3,ind_tot])
+        plt.plot(matrix[:,0,0]/3600,matrix[:,4,ind_tot])
+        plt.plot(matrix[:,0,0]/3600,matrix[:,5,ind_tot])
+        plt.plot(matrix[:,0,0]/3600,matrix[:,6,ind_tot])
         plt.ylabel('Volume [m³]')
-        plt.ylim([0, matrix[0,1]])
+        plt.ylim([0, matrix[0,1,ind_tot]])
 
     plt.xlim([0, sim_length/3600])
     plt.xlabel('Time[h]')
@@ -109,22 +113,22 @@ def plot_matrix_mix(mix, matrix, percent = False):
 
 
 def all_process(mix, temperature, wind_speed, sim_length, dt, water_volume,
-                slick_thickness, fix_area=None, stability_class='F',
-                apply_evaporation = 1, apply_emulsion = 0, wave_height = 0):
+                slick_thickness, fix_area=None, apply_evaporation = 1,
+                apply_emulsion = 0, apply_volatilization = 0, apply_dissolution = 0,
+                wave_height = 0, vertical_diff = 1e-3, stability_class='C'):
     """
     Return a matrix with the amount for each timestep for each process.
     The mix is consider to be the remaining amount as slick. All the
     component with an ebulition point above or equals to 1000K will not
     evaporate.
-    The matrix contains for each timestep
-    time [s]
+    The matrix contains for each timestep and each pseudo component + the sum
+    time [s] (same for all component)
     slick [m³]
     evaporated [m³]
     dissolved [m³]
     biodegraded [m³]
     photooxided [m³]
     emulsionned [m³]
-    density [kg/m³]
 
     Parameters
     ----------
@@ -143,43 +147,49 @@ def all_process(mix, temperature, wind_speed, sim_length, dt, water_volume,
                     ALOHA, if 3 it will use Fingas. The default is 1.
     apply_emulsion : 0 means no emulsion, 1 means emulsion as OSERIT, 2 as
                     Mackay. The default is 0.
+    apply_volatilization : 0 means no volatilization, 1 means volatilization,
+                    The default is 0.
+    apply_dissolution : 0 means no dissolution, 1 means dissolution,
+                    The default is 0.
     wave_height : Wave height [m]
 
     """
 
-    array_in_emulsion = np.zeros((len(mix.list_component)))
 
     time_step_amount = int(sim_length / dt)
-    matrix = np.zeros((int(time_step_amount),8))
+    matrix = np.zeros((int(time_step_amount),7, len(mix.list_component)+1))
 
-    matrix[0,1] = mix.get_prop(temperature).amount
-    matrix[0,7] = mix.get_prop(temperature).density
+    for i in range(0, len(mix.list_component)):
+        matrix[0,1,i]=mix.get_comp(i).amount
+    matrix[0,1,len(mix.list_component)]=sum(matrix[0,1])
+
     if apply_emulsion > 0:
         max_wat = mix.max_water
 
 
     for i in range(1,time_step_amount):
-        matrix[i,0] = i * dt
+        matrix[i,0,:] = i * dt
 
+        ev_fl = np.zeros(len(mix.list_component)+1)
+        dis_fl = np.zeros(len(mix.list_component)+1)
+        bio_fl = np.zeros(len(mix.list_component)+1)
+        phot_fl = np.zeros(len(mix.list_component)+1)
+        vol_fl = np.zeros(len(mix.list_component)+1)
+        emul_fl = np.zeros(len(mix.list_component)+1)
         if fix_area is not None:
             area = fix_area[i]
             slick_thickness = mix.get_prop(temperature).amount / area
         else:
             area = mix.get_prop(temperature).amount / slick_thickness
 
-        ev_fl = 0
-        dis_fl = 0
-        bio_fl = 0
-        phot_fl = 0
-        emul_fl = 0
-
         if mix.get_prop(temperature).amount> 0:
             length = 2 * math.sqrt(area / math.pi)
-            schmdt_nmbr_air = ev.schmdt_nmbr_MW(mix.get_prop(temperature).molar_weight)
+            schmdt_nmbr_air = ev.schmdt_nmbr_MW(mix.get_prop(temperature).molar_weight)#the one of chemmap can be used
 
-            for comp in mix.list_component:
-                comp_area = comp.amount / matrix[i-1,1] * area
-                if comp.amount > 0 :
+            for j in range(0, len(mix.list_component)):
+                comp = mix.get_comp(j)
+                comp_area = comp.amount / matrix[i-1,1,len(mix.list_component)]* area
+                if comp.amount > 0 : #for the volatilization
                     fract = mix.get_molar_fract(comp)
                     if comp.boiling_T < 1000 and ev.find_vapor_pressure(comp, temperature) > 0:
                     #evaporation pseudo component
@@ -203,26 +213,23 @@ def all_process(mix, temperature, wind_speed, sim_length, dt, water_volume,
                             sc = ev.schmdt_nmbr_laminar(kc)
 
                             k = ev.mass_transfer_coefficient_ALOHA(length, Re, sc, n)
-                            flux = 0
-                            if comp.partial_P is not None:
-                                cs = ev.vapor_phase_sat_conc(comp.molar_weight, comp.partial_P,
-                                                              ev.find_vapor_pressure(comp, temperature),
-                                                              temperature)
-                                flux = (ev.evap_mass_flux_ALOHA(cs, wind_friction, k)
-                                        * comp_area / comp.density)
-                        #print(comp.amount)
+
+
+                            cs = ev.vapor_phase_sat_conc(comp.molar_weight,
+                                                          ev.find_vapor_pressure(comp, temperature),
+                                                          temperature)
+
+                            flux = (ev.evap_mass_flux_ALOHA(cs, wind_friction, k)
+                                    * comp_area / comp.density)
+
                         flux = flux  * dt
                         if comp.amount < flux:
                                 flux = comp.amount
                         comp.amount -= flux
-                        ev_fl += flux
-                        #print(flux)
-                        #print(comp.name)
-
-
+                        ev_fl[j] = flux
 
                     #dissolution
-                        if comp.solubility is not None:
+                        if comp.solubility is not None and apply_dissolution:
 
                             Dc = di.diffusion_coefficient(comp.molar_volume)
                             schmdt_nmbr_water = ev.schmdt_nmbr(Dc)
@@ -237,7 +244,7 @@ def all_process(mix, temperature, wind_speed, sim_length, dt, water_volume,
                             #k = di.mass_transfer_coefficient_HNS(Sh, Dc,d)
 
                             #k = di.mass_transfer_coefficient_HNS_Fern(wind_speed, schmdt_nmbr_water)
-                            conc =  matrix[i-1,3]/(water_volume*comp.molar_volume)
+                            conc =  matrix[i-1,3,j]/(water_volume*comp.molar_volume)
                             flux = di.molar_flux_HNS(k, comp_area, comp.solubility / comp.molar_weight,
                                                        conc,fract)
                             flux = flux * comp.molar_volume *dt
@@ -245,33 +252,49 @@ def all_process(mix, temperature, wind_speed, sim_length, dt, water_volume,
                                 flux = comp.amount
 
                             comp.amount -= flux
-                            dis_fl += flux
+                            dis_fl[j] = flux
 
                     #biodegradation
                         if comp.h_l_biod is not None:
-                            flux = bi.simple_half_live(matrix[i-1,3], comp.h_l_biod, dt)
+                            flux = bi.simple_half_live(matrix[i-1,3,j], comp.h_l_biod, dt)
                             if comp.amount < flux:
                                 flux = comp.amount
                             comp.amount -= flux
-                            bio_fl+=flux
+                            bio_fl[j]=flux
                     #photooxidtion
                         if comp.h_l_phot is not None:
                             flux = ph.simple_half_live(comp.amount, comp.h_l_phot, dt)
                             if comp.amount < flux:
                                 flux = comp.amount
                             comp.amount -= flux
-                            phot_fl+=flux
+                            phot_fl[j]=flux
 
+                #volatilization
+                if apply_volatilization == 1 and matrix[i-1,3,j] > 0:
+                    if (comp.get_partial_P(temperature) is not None
+                            and comp.solubility is not None
+                            and comp.molar_weight is not None):
+                        henry = vo.henry(comp.molar_weight, comp.solubility,
+                                            comp.get_partial_P(temperature))
+
+                        if henry >= 3e-7:
+                            k = vo.volatilization_coef(comp.molar_weight,
+                                                    henry, temperature)
+                            rate = vo.volatilization_rate(k, matrix[i-1,3,j], 1e-3, dt)
+                            flux = rate*dt / comp.get_density(temperature)
+                            if flux > matrix[i-1,3,j]:
+                                flux = matrix[i-1,3,j]
+                            vol_fl[j] = flux
             #evaporation fingas
             if apply_evaporation == 3:
                 c1 = mix.fingas1
                 c2 = mix.fingas2
-                fract = ev.evap_fract_time_fingas(True, c1, matrix[i,0], temperature,c2) /100
-                flux = fract * matrix[0,1] - matrix[i-1,2]
+                fract = ev.evap_fract_time_fingas(True, c1, matrix[i,0,0], temperature,c2) /100
+                flux = fract * matrix[0,1,len(mix.list_component)] - matrix[i-1,2,len(mix.list_component)]
                 if mix.get_prop(temperature).amount < flux:
                     flux = mix.get_prop(temperature).amount
-                mix.add_amount(-flux)
-                ev_fl += flux
+
+                ev_fl[0:len(mix.list_component)] = -mix.add_amount(-flux)
 
 
 
@@ -283,30 +306,31 @@ def all_process(mix, temperature, wind_speed, sim_length, dt, water_volume,
                     flux = eml_rate/max_wat - eml_rate
                     if mix.get_prop(temperature).amount < flux:
                         flux = mix.get_prop(temperature).amount
-                    mix.add_amount(-flux)
-                    emul_fl += flux
+                    emul_fl[0:len(mix.list_component)] = mix.add_amount(-flux)
                 #MACKAY
                 elif apply_emulsion == 2:
-                    wat_amount = matrix[i-1,6] /(1-max_wat)*max_wat
+                    wat_amount = matrix[i-1,6,len(mix.list_component)] /(1-max_wat)*max_wat
                     wat_fract = wat_amount / (wat_amount+ mix.get_prop(temperature).amount +
-                                              matrix[i-1,6])
+                                              matrix[i-1,6,len(mix.list_component)])
                     eml_rate = em.wat_fract_MACKAY(wind_speed, wat_fract, max_wat)
 
                     eml_wat = eml_rate * dt
                     flux = (eml_wat/max_wat * (1-max_wat)
-                            * ( matrix[i-1,6] +  mix.get_prop(temperature).amount))
+                            * ( matrix[i-1,6,len(mix.list_component)] +  mix.get_prop(temperature).amount))
                     if mix.get_prop(temperature).amount < flux:
                         flux = mix.get_prop(temperature).amount
-                    array_in_emulsion -= mix.add_amount(-flux)
-                    emul_fl += flux
-        prop = mix.get_prop(temperature)
-        matrix[i,1] = prop.amount
-        matrix[i,2] = ev_fl + matrix[i-1,2]
-        matrix[i,3] = dis_fl  + matrix[i-1,3]
+                    emul_fl[0:len(mix.list_component)] = -mix.add_amount(-flux)
+
+        matrix[i,1,0:len(mix.list_component)] = mix.get_array_amount()
+        matrix[i,2] = ev_fl + matrix[i-1,2] + vol_fl
+        matrix[i,3] = dis_fl  + matrix[i-1,3] - vol_fl
         matrix[i,4] = bio_fl  + matrix[i-1,4]
         matrix[i,5] = phot_fl  + matrix[i-1,5]
         matrix[i,6] = emul_fl  + matrix[i-1,6]
-        matrix[i,7] = mix.get_emulsion_density(temperature,array_in_emulsion)
+        #sums
+        for j in range(1,7):
+            matrix[i,j,len(mix.list_component)] = sum(matrix[i,j,0:len(mix.list_component)])
+
     return matrix
 
 

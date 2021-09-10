@@ -2,7 +2,7 @@
 Simple python module able to modelize some chemicals weathering at sea surface, without any spatial input.
 
 ## Table of contents
-* General info 
+* General info
 * Technologies
 * Contacts
 * References
@@ -21,6 +21,8 @@ Arey, J.S., Nelson, R.K., Plata, D.L., Reddy, C.M., 2007. Disentangling Oil Weat
 Berry, A., Dabrowski, T., Lyons, K., 2012. The oil spill model OILTRANS and its application to the Celtic Sea. Marine Pollution Bulletin 64, 2489–2501. https://doi.org/10.1016/j.marpolbul.2012.07.036
 
 Brighton P.W.M., 1985. Evaporation from a Plane Liquid Surface into a Turbulent Boundary-Layer. Journal of Fluid Mechanics 159, 323–345. https://doi.org/10.1017/S0022112085003238
+
+CHEMMAP technical User’s manual 6.10, 2014. 
 
 Cohen, Y., Mackay, D., Shiu, W.Y., 1980. Mass transfer rates between oil slicks and water. Can. J. Chem. Eng. 58, 569–575. https://doi.org/10.1002/cjce.5450580504
 
@@ -54,4 +56,3 @@ Vaz, A.C., Faillettaz, R., Paris, C.B., 2021. A Coupled Lagrangian-Earth System 
 Vilcáez, J., Li, L., Hubbard, S.S., 2013. A new model for the biodegradation kinetics of oil droplets: application to the Deepwater Horizon oil spill in the Gulf of Mexico. Geochem Trans 14, 4. https://doi.org/10.1186/1467-4866-14-4
 
 Ward, C.P., Armstrong, C.J., Conmy, R.N., French-McCay, D.P., Reddy, C.M., 2018. Photochemical Oxidation of Oil Reduced the Effectiveness of Aerial Dispersants Applied in Response to the Deepwater Horizon Spill. Environ. Sci. Technol. Lett. 5, 226–231. https://doi.org/10.1021/acs.estlett.8b00084
-

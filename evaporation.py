@@ -113,7 +113,30 @@ def schmdt_nmbr_MW(MW):
 
     """
 
-    return 1.3676 * (0.018/(MW*1000))**-(1/2)
+    return 1.3676 * (0.018/(MW*1000))**(-1/2)
+
+
+
+def schmdt_nmbr_MW_chemmap(MW):
+    """
+    Return the Schmidt number [] in air from the molar weight of the compounds,
+    usefull in case of multi-component (from chemap)
+    source : (“CHEMMAP technical User’s manual 6.10,” 2014)
+
+    Parameters
+    ----------
+    MW : Mole weighted average of the oil [kg/mol]
+
+
+    """
+    Dref = 0.0556 #cumene
+    MWref = 120
+    if MW < 0.1: #for pentane
+        Dref = 0.071
+        MWref = 72.15
+
+
+    return 0.15/(Dref * (MWref/(MW*1000))**-(1/2))
 
 
 def schmdt_nmbr_laminar(kc, kinematic_visc = 1.516e-5):
