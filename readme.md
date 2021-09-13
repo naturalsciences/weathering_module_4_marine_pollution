@@ -15,7 +15,7 @@ The project need python and numpy to work.
 
 ## Contacts
 
-##License
+## License
 Shield: [![CC BY 4.0][cc-by-shield]][cc-by]
 
 This work is licensed under a
