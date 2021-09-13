@@ -15,6 +15,18 @@ The project need python and numpy to work.
 
 ## Contacts
 
+##License
+Shield: [![CC BY 4.0][cc-by-shield]][cc-by]
+
+This work is licensed under a
+[Creative Commons Attribution 4.0 International License][cc-by].
+
+[![CC BY 4.0][cc-by-image]][cc-by]
+
+[cc-by]: http://creativecommons.org/licenses/by/4.0/
+[cc-by-image]: https://i.creativecommons.org/l/by/4.0/88x31.png
+[cc-by-shield]: https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg
+
 ## References
 Arey, J.S., Nelson, R.K., Plata, D.L., Reddy, C.M., 2007. Disentangling Oil Weathering Using GC×GC. 2. Mass Transfer Calculations. Environ. Sci. Technol. 41, 5747–5755. https://doi.org/10.1021/es070006p
 
@@ -22,7 +34,7 @@ Berry, A., Dabrowski, T., Lyons, K., 2012. The oil spill model OILTRANS and its 
 
 Brighton P.W.M., 1985. Evaporation from a Plane Liquid Surface into a Turbulent Boundary-Layer. Journal of Fluid Mechanics 159, 323–345. https://doi.org/10.1017/S0022112085003238
 
-CHEMMAP technical User’s manual 6.10, 2014. 
+CHEMMAP technical User’s manual 6.10, 2014.
 
 Cohen, Y., Mackay, D., Shiu, W.Y., 1980. Mass transfer rates between oil slicks and water. Can. J. Chem. Eng. 58, 569–575. https://doi.org/10.1002/cjce.5450580504
 
