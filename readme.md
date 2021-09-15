@@ -27,6 +27,9 @@ This work is licensed under a
 [cc-by-image]: https://i.creativecommons.org/l/by/4.0/88x31.png
 [cc-by-shield]: https://img.shields.io/badge/License-CC%20BY%204.0-lightgrey.svg
 
+## Acknowlegment
+The development of this software has been co-funded by the European Commission, DG-ECHO in the framework of the IMAROS project (2020-2021, grant agreement n° 874387).
+
 ## References
 Arey, J.S., Nelson, R.K., Plata, D.L., Reddy, C.M., 2007. Disentangling Oil Weathering Using GC×GC. 2. Mass Transfer Calculations. Environ. Sci. Technol. 41, 5747–5755. https://doi.org/10.1021/es070006p
 
