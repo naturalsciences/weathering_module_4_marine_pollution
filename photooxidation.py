@@ -8,7 +8,7 @@ import math
 
 def simple_half_live(q, k, dt):
     """
-    Return the photooxidation occuring during a time interval
+    Return the remaining quantity after photooxidation occuring during a time interval
 
     Parameters
     ----------

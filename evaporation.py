@@ -32,12 +32,10 @@ def API_to_density(API):
     API
 
     """
+    if API < 0:
+        API = 0
     d = 141.5/(API+131.5)
     return d * 999.06  #cf https://www.engineeringtoolbox.com/water-density-specific-weight-d_595.html?vA=15&units=C#
-
-
-
-
 
 
 def grad_dist_T_rho(rho15):
@@ -65,6 +63,19 @@ def boiling_T_rho(rho15):
 
     """
     return 532.98 - 3.125 * density_to_API(rho15)
+
+
+def rho_from_boiling_T(T):
+    """
+    Return the density [Kg/m³] from the boiling temperature [K]
+    source : (Mishra and Kumar, 2015)
+
+    Parameters
+    ----------
+    T : Boiling temperature [K]
+
+    """
+    return API_to_density((532.98-T) / 3.125)
 
 
 
@@ -150,7 +161,7 @@ def schmdt_nmbr_laminar(kc, kinematic_visc = 1.516e-5):
     kinematic_visc : kinematic viscosity of air, default 1.516e-5 [m²/s] (20°C)
 
     """
-    return kc/ kinematic_visc
+    return kinematic_visc/kc
 
 
 def mass_transfer_coefficient_george(D, u, L, MmS, T, p_oil,

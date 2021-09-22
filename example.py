@@ -36,8 +36,9 @@ Creating a mix for an oil and weathering it
 brent_blend_cut_T = [40,80,100,120,150,160,180,200,250,300,350,400,500,600,700]
 brent_blend_fract = [3.0,4.0,5.0,19.0,22.0,25.0,29.0,32.0,42.0,52.0,62.0,70.0,85.0,95.0,99.0]
 brent_blend = ou.mix('BRENT BLEND') #creating a mix for applying weathering on it
-#use the two vectors defined earlier to generate pseudo compoenents. The first
+#use the two vectors defined earlier to generate pseudo components. The first
 #one is about temperature and the second is the cumulative fraction distillated
+#compute also
 brent_blend.generate_component_cut(brent_blend_cut_T, brent_blend_fract, amount_init)
 #physical caracteristic of the oil
 brent_blend.density.append(835)
@@ -46,15 +47,15 @@ brent_blend.K_em = 20 #for emulsion
 brent_blend.visco = 4.5
 #fingas constants of the oil, only if used for evaporation
 brent_blend.add_Fingas(3.39, 0.048)
-#compute some usefull data (molar masse, etc...)
-wu.add_oil_properties(brent_blend, temperature)
 
-#!!! The mix will be modified at the end, to avoid that use copy.deepcopy(mix)
+
+#!!! The mix will be modified durang the weathering process, to keep the original,
+# use copy.deepcopy(mix)
 mix = copy.deepcopy(brent_blend)
 
 #create a matrix with the state of the mix at each timestep
-mat = wu.all_process(mix, temperature, wind_speed, sim_length, dt, water_volume,
-                     slick_thickness)
+mat = wu.compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volume,
+                            slick_thickness)
 
 #draw the graph
 wu.plot_matrix_mix(mix, mat)
@@ -90,10 +91,6 @@ tol.solubility = 110e-3
 #tranform a number of day into a half life
 tol.h_l_biod = wu.to_half_life(30)
 
-tol.mu_max = 1.5e-4
-tol.ks = 1.96e-3
-tol.Y_oil = 1.22
-
 
 mix2.add_component(tol)
 
@@ -106,7 +103,7 @@ for i in range(0, int(sim_length/dt)):
 
 #create a matrix with the state of the mix at each timestep
 #the 2 means ALOHA model
-mat = wu.all_process(mix2, temperature, wind_speed, sim_length, dt, water_volume,
+mat = wu.compute_weathering(mix2, temperature, wind_speed, sim_length, dt, water_volume,
                      slick_thickness, fix_area=area, apply_evaporation =2,
                      wave_height=wave_heigth)
 
@@ -120,7 +117,7 @@ Using emulsion with the brent blend
 
 """
 # deepcopy not needed because brent_blend is not used later
-mat = wu.all_process(brent_blend, temperature, wind_speed, sim_length, dt, water_volume,
+mat = wu.compute_weathering(brent_blend, temperature, wind_speed, sim_length, dt, water_volume,
                      slick_thickness, fix_area = area, apply_evaporation = 3,
                      apply_emulsion = 1, wave_height=wave_heigth)
 

@@ -7,6 +7,7 @@ Created on Thu Mar 18 13:20:25 2021
 
 import math
 import numpy as np
+import evaporation as ev
 
 def interp(val, array_value, array_ref):
     """
@@ -47,7 +48,7 @@ class mix:
         Generate the components for oils, two vectors (one with temperatures
         and one with cumulative amount evaporated). The total amount (m³) must
         be given and the temperature at which the fraction does not evaporated
-        anymore too (in °C)
+        anymore too (in °C). It compute some basic properties for the components
 
 
         Parameters
@@ -55,7 +56,7 @@ class mix:
         temp : Temperature vector
         fraction : Fraction vector
         tot_amount : Amount of the mix [m³]
-        MAX_EVAPORATIVE_TEMP : Temperature above which nothing can evporate,the
+        MAX_EVAPORATIVE_TEMP : Cut above which nothing can evaporate,the
                                 default is 250 [°C]
 
         Raises
@@ -88,6 +89,7 @@ class mix:
             compound.boiling_T = 1000
             self.list_component.append(compound)
 
+        self.add_oil_properties()
 
     def add_Fingas(self, c1, c2 = None):
         """
@@ -155,7 +157,7 @@ class mix:
             self.ref_T_Clau = self.list_component[0].ref_T_Clau
             for comp in self.list_component:
                 if comp.partial_P is not None:
-                    partial_P += comp.partial_P * comp.amount / comp.molar_volume
+                    partial_P += comp.get_partial_P(T) * comp.amount / comp.molar_volume
                 else:
                     partial_P += 0
 
@@ -257,6 +259,27 @@ class mix:
             array_tr[i] = self.get_comp(i).amount
         return array_tr
 
+    def add_oil_properties(self):
+        """
+        Compute the boiling temperature, molar volume and molar weigth of
+        components
+
+        """
+        for component in self.list_component:
+
+            if component.boiling_T is None and component.density is not None:
+                component.boiling_T = ev.boiling_T_rho(component.density)
+            elif component.boiling_T is not None and component.density is None:
+                component.density = ev.rho_from_boiling_T(component.boiling_T)
+
+            if component.molar_volume is None:
+                component.molar_volume = ev.molar_volume_eb_T(component.boiling_T)
+
+            if component.density is not None and  component.molar_weight is None:
+               component.molar_weight = component.density * component.molar_volume
+            
+
+
 def get_emulsion_density(mix, T, array_in_emulsion, water_density = 1020):
     """
     Return the density by taking into account each component, T is the temperature,
@@ -287,9 +310,7 @@ class component:
     vap_enthalpie = None #[J/kg]
     h_l_phot = None #[1/s]
     h_l_biod = None #[1/s]
-
-
-    solubility = None #[kg/m³] from salt water (30 ‰)
+    solubility = None #[kg/m³]
 
 
     def __init__(self, name, amount = 0):
@@ -298,7 +319,7 @@ class component:
 
     def get_density(self, T=0):
         """
-        Return the density of the component. The temperature T can be given
+        Return the density [kg/m³] of the component. The temperature T [K]can be given
         for taking into account the density change with the temperature
 
         """
@@ -307,7 +328,7 @@ class component:
 
     def get_partial_P(self, T):
         """
-        Return the partial pressure of the component at the temperature T
+        Return the partial pressure [Pa] of the component at the temperature T [K]
 
         """
         if self.vap_enthalpie is not None and self.ref_T_Clau is not None:
@@ -316,6 +337,25 @@ class component:
                                               self.molar_weight/8.314) * a)
         else:
             return self.partial_P
+
+    def compute_enthalpy(self):
+        """
+        Return an estimation of the vap_enthalpie from a vapor pressure at a
+        certain temperature an the ebulition temperature. It suppose the
+        vap_enthalpie independant of the temperature
+
+        """
+        if self.molar_weight is None:
+            raise Exception("The molar_weight must be defined for this")
+        if self.boiling_T is None:
+            raise Exception("The boiling_T must be defined for this")
+        if self.ref_T_Clau is None:
+            raise Exception("The ref_T_Clau must be defined for this")
+
+        num = - 8.314 *math.log(self.boiling_T/self.partial_P)
+        den = self.molar_weight* (1/self.boiling_T-1/self.ref_T_Clau)
+        self.vap_enthalpie =  num/den
+
 
     def compute_molar_volume(self):
         """

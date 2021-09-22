@@ -33,34 +33,6 @@ def to_half_life(days):
     return -math.log(1/2)/s
 
 
-def add_oil_properties(oil, T):
-    """
-    Compute the boiling temperature, molar volume and molar weigth of
-    components
-
-    Parameters
-    ----------
-    oil : Oil mix
-    T : Temperature [K]
-
-    """
-    for component in oil.list_component:
-        #ebulition temperature
-        if component.boiling_T is None and component.density is not None:
-            component.boiling_T = ev.boiling_T_rho(component.density)
-
-        #vapor pressure
-        # if component.partial_P is None:
-        #     component.partial_P = ev.vapor_pressure_eb_T(component.boiling_T,
-        #                                                  T)
-        if component.molar_volume is None:
-            component.molar_volume = ev.molar_volume_eb_T(component.boiling_T)
-
-        if component.density is not None and  component.molar_weight is None:
-           component.molar_weight = component.density * component.molar_volume
-
-
-
 def plot_matrix_mix(mix, matrix, percent = False):
     """
     Plot the matrix
@@ -112,10 +84,10 @@ def plot_matrix_mix(mix, matrix, percent = False):
 
 
 
-def all_process(mix, temperature, wind_speed, sim_length, dt, water_volume,
-                slick_thickness, fix_area=None, apply_evaporation = 1,
-                apply_emulsion = 0, apply_volatilization = 0, apply_dissolution = 0,
-                wave_height = 0, vertical_diff = 1e-3, stability_class='C'):
+def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volume,
+                    slick_thickness, fix_area=None, apply_evaporation = 1,
+                    apply_emulsion = 0, apply_volatilization = 0, apply_dissolution = 0,
+                    wave_height = 0, vertical_diff = 1e-3, stability_class='C'):
     """
     Return a matrix with the amount for each timestep for each process.
     The mix is consider to be the remaining amount as slick. All the
@@ -140,11 +112,11 @@ def all_process(mix, temperature, wind_speed, sim_length, dt, water_volume,
     water_volume : Amount of water in which the mix is dissolved [m³]
     slick_thickness : Slick thickness [m], computed from area if it is not None
     fix_area : Vector with the size of the slick area [m²] at each timestep,
-                if none, it will be computed fromthe slick_thickness and the volume.
+                if none, it will be computed from the slick_thickness and the volume.
                 The default is None.
     stability_class : Pasquill stability index. The default is 'F'.
-    apply_evaporation : If 1, use oiltrans for evaporation, if 2 it will use
-                    ALOHA, if 3 it will use Fingas. The default is 1.
+    apply_evaporation : 0 means no evaporation. If 1, use oiltrans for evaporation,
+                    if 2 it will use ALOHA, if 3 it will use Fingas. The default is 1.
     apply_emulsion : 0 means no emulsion, 1 means emulsion as OSERIT, 2 as
                     Mackay. The default is 0.
     apply_volatilization : 0 means no volatilization, 1 means volatilization,
@@ -221,15 +193,14 @@ def all_process(mix, temperature, wind_speed, sim_length, dt, water_volume,
 
                             flux = (ev.evap_mass_flux_ALOHA(cs, wind_friction, k)
                                     * comp_area / comp.density)
-
-                        flux = flux  * dt
+                        flux = flux * dt
                         if comp.amount < flux:
                                 flux = comp.amount
                         comp.amount -= flux
                         ev_fl[j] = flux
 
                     #dissolution
-                        if comp.solubility is not None and apply_dissolution:
+                        if apply_dissolution:
 
                             Dc = di.diffusion_coefficient(comp.molar_volume)
                             schmdt_nmbr_water = ev.schmdt_nmbr(Dc)

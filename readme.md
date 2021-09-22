@@ -8,12 +8,10 @@ Simple python module able to modelize some chemicals weathering at sea surface, 
 * References
 
 ## General info
-The module can be used to model HNS substance or oil weathering. It needs some input such as the temperature or the windspeed. It allows for pure chemicals and for pseudo-component chemicals by providing an object Mix and an object Component (in oil_utils.py), and some equation to compute the evolution of it (in weathering_utils.py). There is a file "exemple.py" wich allows to understand how the code is working. There is also a list of parametrization function in the files describing the weathering processes (evaporation.py, dissolution.py, photooxidation.py, emulsification.py, biodegradation.py) which can be used. All the sources for these parametrization are in the references section.
+The module can be used to model HNS substance or oil weathering. It needs some input such as the temperature or the windspeed. It allows for pure chemicals and for pseudo-component chemicals by providing an object Mix and an object Component (in oil_utils.py), and some equation to compute the evolution of it (in weathering_utils.py). There is a file "example.py" wich allows to understand how the code is working. There is also a list of parametrization function in the files describing the weathering processes (evaporation.py, dissolution.py, photooxidation.py, emulsification.py, biodegradation.py) which can be used. All the sources for these parametrization are in the references section.
 
 ## Technologies
 The project need python and numpy to work.
-
-## Contacts
 
 ## License
 Shield: [![CC BY 4.0][cc-by-shield]][cc-by]
@@ -58,6 +56,10 @@ Mackay, D., Matsugu, R.S., 1973. Evaporation rates of liquid hydrocarbon spills 
 Mishra, A.K., Kumar, G.S., 2015. Weathering of Oil Spill: Modeling and Analysis. Aquatic Procedia 4, 435–442. https://doi.org/10.1016/j.aqpro.2015.02.058
 
 Nordam, T., 2020. Modelling biodegradation of crude oil components at low temperatures 4.
+
+OSERIT manual 2012, https://www.belspo.be/belspo/ssd/science/Reports/OSERIT_FinRep_AD.pdf
+
+Scory, S. (2005) The use of mathematical models for estimating oil pollution damage at sea, in: Maes, F. Ed. Marine resource damage assessment: liability and compensation for environmental damage. pp. 211-252.
 
 Shen, H.T., Yapa, P.D., Wang, D.S., Yang, X.Q., 1993. A Mathematical Model for Oil Slick Transport and Mixing in Rivers 79.
 
