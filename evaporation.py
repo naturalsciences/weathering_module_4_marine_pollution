@@ -427,24 +427,26 @@ def vapor_pressure_eb_T(eb_T, T, atm_P = 101325, R = 8.134):
     atm_P : Atmospheric pressure [Pa] the default is 101 325 Pa
     R : Perfect gas constant, the default is 8.314 [J/mol K]
 
-
     """
-    dsi = 8.75 * math.log10(eb_T)
+    dsi = 8.75 + 1.987*math.log10(eb_T)
     c2 = 0.19 * (eb_T-18)
 
     a = (dsi * (eb_T-c2)**2 )/(R*eb_T)
     b = (1/(eb_T-c2)-1/(T-c2))
+    print(eb_T,dsi, c2, a, b)
     return atm_P * math.exp(a*b)
 
 
-def find_vapor_pressure(comp, temperature):
+def find_vapor_pressure(comp, temperature, max_ev_temp):
     """
     Compute the vapor pressure from the temperature, if not already computed
-
+    Everything with a ebulition temperature above max_ev_temp does not evaporate
+    if his vapor pressure is not already defined
     Parameters
     ----------
     comp : component
     temperature : Temperature [K]
+    max_ev_temp : temperature [K] above which the partial pressure is put at 0
 
     """
     if comp.get_partial_P(temperature) is None:
@@ -452,6 +454,8 @@ def find_vapor_pressure(comp, temperature):
         if boiling_T is None:
             boiling_T = boiling_T_rho(comp.density)
         p_oil = vapor_pressure_eb_T(boiling_T,temperature)
+        if(boiling_T > max_ev_temp):
+            p_oil = 0
     else:
         p_oil = comp.get_partial_P(temperature)
 

@@ -17,7 +17,7 @@ import copy
 import math
 
 
-
+MAX_EVAPORATIVE_TEMP = 573.15
 
 
 
@@ -163,12 +163,12 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
                 comp_area = comp.amount / matrix[i-1,1,len(mix.list_component)]* area
                 if comp.amount > 0 : #for the volatilization
                     fract = mix.get_molar_fract(comp)
-                    if comp.boiling_T < 1000 and ev.find_vapor_pressure(comp, temperature) > 0:
+                    if comp.boiling_T < 1000 and ev.find_vapor_pressure(comp, temperature, MAX_EVAPORATIVE_TEMP) > 0:
                     #evaporation pseudo component
                         flux = 0
                         #OILTRANS
                         if apply_evaporation == 1 :
-                            p_oil = ev.find_vapor_pressure(comp, temperature)
+                            p_oil = ev.find_vapor_pressure(comp, temperature, MAX_EVAPORATIVE_TEMP)
                             molar_v = comp.molar_volume
                             #k from mw
                             k_evp = ev.mass_transfer_coefficient_OILTRANS(wind_speed, length,
@@ -188,8 +188,8 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
 
 
                             cs = ev.vapor_phase_sat_conc(comp.molar_weight,
-                                                          ev.find_vapor_pressure(comp, temperature),
-                                                          temperature)
+                                                          ev.find_vapor_pressure(comp, temperature,
+                                                          MAX_EVAPORATIVE_TEMP), temperature)
 
                             flux = (ev.evap_mass_flux_ALOHA(cs, wind_friction, k)
                                     * comp_area / comp.density)

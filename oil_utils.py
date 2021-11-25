@@ -8,6 +8,7 @@ Created on Thu Mar 18 13:20:25 2021
 import math
 import numpy as np
 import evaporation as ev
+import weathering_utils as wu
 
 def interp(val, array_value, array_ref):
     """
@@ -27,10 +28,6 @@ def interp(val, array_value, array_ref):
 
 class mix:
 
-
-
-
-
     def __init__(self, name):
         self.name = name
         self.list_component = []
@@ -42,8 +39,7 @@ class mix:
         self.max_water = 0.8 # max amount of water in the emulsion
 
 
-    def generate_component_cut(self, temp, fraction, tot_amount,
-                               MAX_EVAPORATIVE_TEMP = 250):
+    def generate_component_cut(self, temp, fraction, tot_amount):
         """
         Generate the components for oils, two vectors (one with temperatures
         and one with cumulative amount evaporated). The total amount (m³) must
@@ -56,8 +52,6 @@ class mix:
         temp : Temperature vector
         fraction : Fraction vector
         tot_amount : Amount of the mix [m³]
-        MAX_EVAPORATIVE_TEMP : Cut above which nothing can evaporate,the
-                                default is 250 [°C]
 
         Raises
         ------
@@ -74,7 +68,7 @@ class mix:
         prev = 0
         remaining = 100
         for i in range(len(temp)):
-            if temp[i] > MAX_EVAPORATIVE_TEMP:
+            if temp[i] > wu.MAX_EVAPORATIVE_TEMP-273.15:
                 break
             ratio = fraction[i] - prev
             prev = fraction[i]
@@ -266,7 +260,6 @@ class mix:
 
         """
         for component in self.list_component:
-
             if component.boiling_T is None and component.density is not None:
                 component.boiling_T = ev.boiling_T_rho(component.density)
             elif component.boiling_T is not None and component.density is None:
@@ -277,14 +270,21 @@ class mix:
 
             if component.density is not None and  component.molar_weight is None:
                component.molar_weight = component.density * component.molar_volume
-            
+
+def get_mix_viscosity(mix, array_in_emulsion):
+    """
+    Return the viscosity of the mix, array_in_emulsion is an array with the amount
+    of each component in emulsion
+    """
+    #if there is less than 1% of emulsion, we make the log sum of viscosity
+    #TODO
+    pass
 
 
 def get_emulsion_density(mix, T, array_in_emulsion, water_density = 1020):
     """
     Return the density by taking into account each component, T is the temperature,
     array_in_emulsion is an array with the amount of each component in emulsion
-    for the first rows.
     """
     water_volume = 0
     oil_volume = 0
