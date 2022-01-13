@@ -415,25 +415,26 @@ def molar_volume_eb_T(eb_T):
 
 
 
-def vapor_pressure_eb_T(eb_T, T, atm_P = 101325, R = 8.134):
+def vapor_pressure_eb_T(eb_T, T, atm_P = 101325, R = 1.987, Kf = 1.06):
     """
     Return the vapor pressure [Pa] from the boiling point cut
-    source :(Berry et al., 2012)
+    source :(Lyman et al, 1990)
 
     Parameters
     ----------
     eb_T : Boiling point cut [K]
     T : Temperature [K]
     atm_P : Atmospheric pressure [Pa] the default is 101 325 Pa
-    R : Perfect gas constant, the default is 8.314 [J/mol K]
+    R : Perfect gas constant, the default is 1.987 [cal/mol K]
+    Kf : Constant for each chemical compounds, by default 1.06
 
     """
-    dsi = 8.75 + 1.987*math.log10(eb_T)
-    c2 = 0.19 * (eb_T-18)
+    dsi = Kf * (8.75 + R*math.log(eb_T))
+    c2 = 0.19 * eb_T-18
 
-    a = (dsi * (eb_T-c2)**2 )/(R*eb_T)
+    a = (dsi * (eb_T-c2)**2 )/(R*eb_T*0.97)
     b = (1/(eb_T-c2)-1/(T-c2))
-    print(eb_T,dsi, c2, a, b)
+    #print(eb_T,dsi, c2, a, b)
     return atm_P * math.exp(a*b)
 
 
