@@ -69,25 +69,25 @@ Creating a mix of xyleme and toluene and weathering it
 mix2 = ou.mix('Xylene and Toluene')
 xyl = ou.component('Xyleme',amount_init/2)#HNS MS 20°C
 xyl.density = 870
-xyl.molar_volume = 1.220e-4
 xyl.molar_weight = 0.10616
 xyl.boiling_T = 140.2+273.15
 xyl.partial_P = 1070
 xyl.ref_T_Clau = 25+273
 xyl.vap_enthalpie = 401733
 xyl.solubility = 100e-3
+xyl.compute_molar_volume()
 mix2.add_component(xyl)
 
 
 tol = ou.component('Toluene',amount_init/2)#HNS MS 20°C
 tol.density = 868.3
-tol.molar_volume = 1.061e-4
 tol.molar_weight = 0.09215
 tol.boiling_T = 110.58+273.15
 tol.partial_P = 3800
 tol.ref_T_Clau = 25+273
 tol.vap_enthalpie = 412480
 tol.solubility = 110e-3
+tol.compute_molar_volume()
 #tranform a number of day into a half life
 tol.h_l_biod = wu.to_half_life(30)
 

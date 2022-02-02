@@ -20,10 +20,6 @@ import math
 MAX_EVAPORATIVE_TEMP = 573.15
 
 
-
-
-
-
 def to_half_life(days):
     """
     Return the constant [1/s] from the half life length [day]
@@ -33,7 +29,7 @@ def to_half_life(days):
     return -math.log(1/2)/s
 
 
-def plot_matrix_mix(mix, matrix, percent = False):
+def plot_matrix_mix(mix, matrix, title_add = "", percent = False):
     """
     Plot the matrix
 
@@ -48,7 +44,8 @@ def plot_matrix_mix(mix, matrix, percent = False):
         biodegraded [m³]
         photooxided [m³]
         emulsionned [m³]
-    percent : if True, show the abcisse in percent, by default False
+    title_add: string which will be added to the title of the plot
+    percent : if True, show the ordinate in percent, by default False
 
     """
     ind_tot = len(mix.list_component)
@@ -78,7 +75,7 @@ def plot_matrix_mix(mix, matrix, percent = False):
     plt.xlim([0, sim_length/3600])
     plt.xlabel('Time[h]')
     plt.legend(['Remaining','Evaporated','Dissolved','Biodegradation','Photooxidation','Emulsion'])
-    plt.title(mix.name)
+    plt.title(title_add+mix.name)
 
     plt.show()
 
@@ -87,7 +84,8 @@ def plot_matrix_mix(mix, matrix, percent = False):
 def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volume,
                     slick_thickness, fix_area=None, apply_evaporation = 1,
                     apply_emulsion = 0, apply_volatilization = 0, apply_dissolution = 0,
-                    wave_height = 0, vertical_diff = 1e-3, stability_class='C'):
+                    wave_height = 0, vertical_diff = 1e-3, stability_class='C',
+                    speed_for_dis=1e-3, start_dis = False):
     """
     Return a matrix with the amount for each timestep for each process.
     The mix is consider to be the remaining amount as slick. All the
@@ -113,7 +111,8 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
     slick_thickness : Slick thickness [m], computed from area if it is not None
     fix_area : Vector with the size of the slick area [m²] at each timestep,
                 if none, it will be computed from the slick_thickness and the volume.
-                The default is None.
+                The default is None. Can be a scalar which is then transform into
+                a vector
     stability_class : Pasquill stability index. The default is 'F'.
     apply_evaporation : 0 means no evaporation. If 1, use oiltrans for evaporation,
                     if 2 it will use ALOHA, if 3 it will use Fingas. The default is 1.
@@ -124,20 +123,32 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
     apply_dissolution : 0 means no dissolution, 1 means dissolution,
                     The default is 0.
     wave_height : Wave height [m]
-
+    speed_for_dis: the speed of the molecule for the dissolution[m/s]
+    start_dis: if True, will start di        print(matrix[0,3,ind_tot])ssolved and not in slick
     """
 
+    if fix_area != None and type(fix_area) != list:
+        area = fix_area
+        fix_area = []
+        for i in range(0, int(sim_length/dt)):
+            fix_area.append(area)
 
     time_step_amount = int(sim_length / dt)
     matrix = np.zeros((int(time_step_amount),7, len(mix.list_component)+1))
-
+    #allocation of the components in the matrix
     for i in range(0, len(mix.list_component)):
-        matrix[0,1,i]=mix.get_comp(i).amount
-    matrix[0,1,len(mix.list_component)]=sum(matrix[0,1])
+        if start_dis :
+            matrix[0,3,i]=mix.get_comp(i).amount
+            mix.get_comp(i).amount = 0
+        else:
+            matrix[0,1,i]=mix.get_comp(i).amount
+    if start_dis :
+        matrix[0,3,len(mix.list_component)]=sum(matrix[0,3])
+    else:
+        matrix[0,1,len(mix.list_component)]=sum(matrix[0,1])
 
     if apply_emulsion > 0:
         max_wat = mix.max_water
-
 
     for i in range(1,time_step_amount):
         matrix[i,0,:] = i * dt
@@ -153,9 +164,10 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
             slick_thickness = mix.get_prop(temperature).amount / area
         else:
             area = mix.get_prop(temperature).amount / slick_thickness
+        length = 2 * math.sqrt(area / math.pi)
 
         if mix.get_prop(temperature).amount> 0:
-            length = 2 * math.sqrt(area / math.pi)
+
             schmdt_nmbr_air = ev.schmdt_nmbr_MW(mix.get_prop(temperature).molar_weight)#the one of chemmap can be used
 
             for j in range(0, len(mix.list_component)):
@@ -206,7 +218,7 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
                             schmdt_nmbr_water = ev.schmdt_nmbr(Dc)
                             #for surface
 
-                            Sh = di.sherwood_slick(schmdt_nmbr_water, wind_speed, length)
+                            Sh = di.sherwood_slick(schmdt_nmbr_water, speed_for_dis, length)
                             k = di.mass_transfer_coefficient_HNS(Sh, Dc,length)
 
                             #for subsurface droplet
@@ -240,22 +252,6 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
                             comp.amount -= flux
                             phot_fl[j]=flux
 
-                #volatilization
-                if apply_volatilization == 1 and matrix[i-1,3,j] > 0:
-                    if (comp.get_partial_P(temperature) is not None
-                            and comp.solubility is not None
-                            and comp.molar_weight is not None):
-                        henry = vo.henry(comp.molar_weight, comp.solubility,
-                                            comp.get_partial_P(temperature))
-
-                        if henry >= 3e-7:
-                            k = vo.volatilization_coef(comp.molar_weight,
-                                                    henry, temperature)
-                            rate = vo.volatilization_rate(k, matrix[i-1,3,j], 1e-3, dt)
-                            flux = rate*dt / comp.get_density(temperature)
-                            if flux > matrix[i-1,3,j]:
-                                flux = matrix[i-1,3,j]
-                            vol_fl[j] = flux
             #evaporation fingas
             if apply_evaporation == 3:
                 c1 = mix.fingas1
@@ -291,6 +287,26 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
                     if mix.get_prop(temperature).amount < flux:
                         flux = mix.get_prop(temperature).amount
                     emul_fl[0:len(mix.list_component)] = -mix.add_amount(-flux)
+
+        #volatilization (after because comp.amount can be ==0)
+        if apply_volatilization == 1:
+            for j in range(0, len(mix.list_component)):
+                comp = mix.get_comp(j)
+                if matrix[i-1,3,j] > 0:
+                    if (comp.get_partial_P(temperature) is not None
+                            and comp.solubility is not None
+                            and comp.molar_weight is not None):
+                        henry = vo.henry(comp.molar_weight, comp.solubility,
+                                            comp.get_partial_P(temperature))
+
+                        if henry >= 3e-7:
+                            k = vo.volatilization_coef(comp.molar_weight,
+                                                    henry, temperature)
+                            rate = vo.volatilization_rate(k, matrix[i-1,3,j], vertical_diff, dt)
+                            flux = rate*dt / comp.get_density(temperature)
+                            if flux > matrix[i-1,3,j]:
+                                flux = matrix[i-1,3,j]
+                            vol_fl[j] = flux
 
         matrix[i,1,0:len(mix.list_component)] = mix.get_array_amount()
         matrix[i,2] = ev_fl + matrix[i-1,2] + vol_fl
@@ -380,7 +396,6 @@ def return_chemicals(amount):
     butyl_acetate = otl.mix('Butyl acetate')
     ba = otl.component('Bulk',amount)#HNS MS 20°C
     ba.density = 881
-    ba.molar_volume = 1.319e-4
     ba.molar_weight = 0.1162
     ba.boiling_T = 126+273.15
     ba.partial_P = 1990
@@ -397,7 +412,6 @@ def return_chemicals(amount):
     butyl_acrylate = otl.mix('Butyl acrylate')
     bay = otl.component('Bulk',amount)#HNS MS 20°C
     bay.density = 900
-    bay.molar_volume = 1.424e-4
     bay.molar_weight = 0.12817
     bay.boiling_T = 148.8+273.15
     bay.partial_P = 727
@@ -415,7 +429,6 @@ def return_chemicals(amount):
     ethylhexyl_acrylate = otl.mix('2-ethylhexyl acrylate')
     eay = otl.component('Bulk',amount)#HNS MS 20°C
     eay.density = 890
-    eay.molar_volume = 2.071e-4
     eay.molar_weight = 0.18428
     eay.boiling_T = 216+273.15
     eay.partial_P = 24
@@ -431,7 +444,6 @@ def return_chemicals(amount):
     heptane = otl.mix('Heptane')
     hep = otl.component('Bulk',amount)#HNS MS 20°C
     hep.density = 680
-    hep.molar_volume = 1.474e-4
     hep.molar_weight = 0.1002
     hep.boiling_T = 98+273.15
     hep.partial_P = 6133
@@ -447,7 +459,6 @@ def return_chemicals(amount):
     toluene = otl.mix('Toluene')
     tol = otl.component('Bulk',amount)#HNS MS 20°C
     tol.density = 868.3
-    tol.molar_volume = 1.061e-4
     tol.molar_weight = 0.09215
     tol.boiling_T = 110.58+273.15
     tol.partial_P = 3800
@@ -469,7 +480,6 @@ def return_chemicals(amount):
     methanol = otl.mix('Methanol')
     meth = otl.component('Bulk',amount)#HNS MS 20°C
     meth.density = 791.4
-    meth.molar_volume = 4.049e-5
     meth.molar_weight = 0.032042
     meth.boiling_T = 64.6+273.15
     meth.partial_P = 12265
@@ -485,7 +495,6 @@ def return_chemicals(amount):
     pentane = otl.mix('Pentane')
     pen = otl.component('Bulk',amount)#HNS MS 20°C
     pen.density = 626.2
-    pen.molar_volume = 1.152e-4
     pen.molar_weight = 0.072149
     pen.boiling_T = 36.06+273.15
     pen.partial_P = 57328
@@ -501,7 +510,6 @@ def return_chemicals(amount):
     acetone = otl.mix('Acetone')
     ace = otl.component('Bulk',amount)#HNS MS 20°C
     ace.density = 790
-    ace.molar_volume = 7.352e-5
     ace.molar_weight = 0.05808
     ace.boiling_T = 56.2+273.15
     ace.partial_P = 30930
@@ -519,7 +527,6 @@ def return_chemicals(amount):
     xylene = otl.mix('Xylene')
     xyl = otl.component('Bulk',amount)#HNS MS 20°C
     xyl.density = 870
-    xyl.molar_volume = 1.220e-4
     xyl.molar_weight = 0.10616
     xyl.boiling_T = 140.2+273.15
     xyl.partial_P = 1070

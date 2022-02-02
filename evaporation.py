@@ -266,9 +266,7 @@ def mass_transfer_coefficient_ALOHA(Dp, Re, sc, n, k = 0.4, y = 0.577, SCt = 0.8
     SCt : Turbulent schmidt number, equals to 0.85
     z : Surface roughness lenght [m]. The default for open sea is 0.0002 m (wikipedia)
 
-
     """
-
     X = (n*k**2*Dp)/(SCt*z*math.e**(1/n))
 
     smooth = (3.85*sc**(1/3)-1.3)**2 + SCt/k*math.log(0.13*sc)
@@ -428,12 +426,12 @@ def vapor_pressure_eb_T(eb_T, T, atm_P = 101325, R = 8.134):
     R : Perfect gas constant, the default is 8.314 [J/mol K]
 
     """
-    dsi = 8.75 + 1.987*math.log10(eb_T)
+    dsi = 8.75 + 1.987*math.log(eb_T)
     c2 = 0.19 * (eb_T-18)
 
-    a = (dsi * (eb_T-c2)**2 )/(R*eb_T)
+    a = (dsi * (eb_T-c2)**2 )/(R*eb_T*0.97)
     b = (1/(eb_T-c2)-1/(T-c2))
-    print(eb_T,dsi, c2, a, b)
+
     return atm_P * math.exp(a*b)
 
 
