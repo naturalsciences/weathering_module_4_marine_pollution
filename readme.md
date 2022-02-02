@@ -54,6 +54,8 @@ Kotzakoulakis, K., George, S.C., 2018. Predicting the weathering of fuel and oil
 
 Lehr, W., Jones, R., Evans, M., Simecek-Beatty, D., Overstreet, R., 2002. Revisions of the ADIOS oil spill model. Environmental Modelling & Software 17, 189–197. https://doi.org/10.1016/S1364-8152(01)00064-0
 
+Lyman, J.L., W.F.Reehl, and D.A. Rosenblatt, Handbook of Chemical Property Estimation Methods, Americain Chemical Society, Washington D.C., 1990
+
 Mackay, D., Matsugu, R.S., 1973. Evaporation rates of liquid hydrocarbon spills on land and water. Can. J. Chem. Eng. 51, 434–439. https://doi.org/10.1002/cjce.5450510407
 
 Mishra, A.K., Kumar, G.S., 2015. Weathering of Oil Spill: Modeling and Analysis. Aquatic Procedia 4, 435–442. https://doi.org/10.1016/j.aqpro.2015.02.058
