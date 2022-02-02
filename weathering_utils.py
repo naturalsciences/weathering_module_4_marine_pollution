@@ -87,7 +87,8 @@ def plot_matrix_mix(mix, matrix, percent = False):
 def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volume,
                     slick_thickness, fix_area=None, apply_evaporation = 1,
                     apply_emulsion = 0, apply_volatilization = 0, apply_dissolution = 0,
-                    wave_height = 0, vertical_diff = 1e-3, stability_class='C'):
+                    wave_height = 0, vertical_diff = 1e-3, stability_class='C',
+                    current_speed = 0):
     """
     Return a matrix with the amount for each timestep for each process.
     The mix is consider to be the remaining amount as slick. All the
@@ -124,7 +125,7 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
     apply_dissolution : 0 means no dissolution, 1 means dissolution,
                     The default is 0.
     wave_height : Wave height [m]
-
+    current_speed : Current speed [m/s]
     """
 
 
@@ -134,7 +135,6 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
     for i in range(0, len(mix.list_component)):
         matrix[0,1,i]=mix.get_comp(i).amount
     matrix[0,1,len(mix.list_component)]=sum(matrix[0,1])
-
     if apply_emulsion > 0:
         max_wat = mix.max_water
 
@@ -161,6 +161,7 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
             for j in range(0, len(mix.list_component)):
                 comp = mix.get_comp(j)
                 comp_area = comp.amount / matrix[i-1,1,len(mix.list_component)]* area
+
                 if comp.amount > 0 : #for the volatilization
                     fract = mix.get_molar_fract(comp)
                     if comp.boiling_T < 1000 and ev.find_vapor_pressure(comp, temperature, MAX_EVAPORATIVE_TEMP) > 0:
@@ -201,29 +202,30 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
 
                     #dissolution
                         if apply_dissolution:
+                            if (comp.solubility is not None
+                                    and comp.molar_weight is not None):
+                                Dc = di.diffusion_coefficient(comp.molar_volume)
+                                schmdt_nmbr_water = ev.schmdt_nmbr(Dc)
+                                #for surface
 
-                            Dc = di.diffusion_coefficient(comp.molar_volume)
-                            schmdt_nmbr_water = ev.schmdt_nmbr(Dc)
-                            #for surface
+                                Sh = di.sherwood_slick(schmdt_nmbr_water, wind_speed, length)
+                                k = di.mass_transfer_coefficient_HNS(Sh, Dc,length)
 
-                            Sh = di.sherwood_slick(schmdt_nmbr_water, wind_speed, length)
-                            k = di.mass_transfer_coefficient_HNS(Sh, Dc,length)
+                                #for subsurface droplet
+                                #d = 10**-5
+                                #Sh = di.sherwood_droplet(schmdt_nmbr_water,0.001,d)
+                                #k = di.mass_transfer_coefficient_HNS(Sh, Dc,d)
 
-                            #for subsurface droplet
-                            #d = 10**-5
-                            #Sh = di.sherwood_droplet(schmdt_nmbr_water,0.001,d)
-                            #k = di.mass_transfer_coefficient_HNS(Sh, Dc,d)
+                                #k = di.mass_transfer_coefficient_HNS_Fern(wind_speed, schmdt_nmbr_water)
+                                conc =  matrix[i-1,3,j]/(water_volume*comp.molar_volume)
+                                flux = di.molar_flux_HNS(k, comp_area, comp.solubility / comp.molar_weight,
+                                                           conc,fract)
+                                flux = flux * comp.molar_volume *dt
+                                if comp.amount < flux:
+                                    flux = comp.amount
 
-                            #k = di.mass_transfer_coefficient_HNS_Fern(wind_speed, schmdt_nmbr_water)
-                            conc =  matrix[i-1,3,j]/(water_volume*comp.molar_volume)
-                            flux = di.molar_flux_HNS(k, comp_area, comp.solubility / comp.molar_weight,
-                                                       conc,fract)
-                            flux = flux * comp.molar_volume *dt
-                            if comp.amount < flux:
-                                flux = comp.amount
-
-                            comp.amount -= flux
-                            dis_fl[j] = flux
+                                comp.amount -= flux
+                                dis_fl[j] = flux
 
                     #biodegradation
                         if comp.h_l_biod is not None:
@@ -241,21 +243,34 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
                             phot_fl[j]=flux
 
                 #volatilization
-                if apply_volatilization == 1 and matrix[i-1,3,j] > 0:
+                if apply_volatilization > 0 and matrix[i-1,3,j] > 0:
                     if (comp.get_partial_P(temperature) is not None
                             and comp.solubility is not None
                             and comp.molar_weight is not None):
-                        henry = vo.henry(comp.molar_weight, comp.solubility,
-                                            comp.get_partial_P(temperature))
+                        flux = 0
+                        if apply_volatilization == 1:
+                            henry = vo.henry(comp.get_partial_P(temperature), comp.solubility,
+                                                comp.molar_weight)
+                            if henry > 3e-7:
+                                nd_henry = vo.nondimensional_henry(henry, temperature)
+                                kl = vo.liquid_phase_exchange_coef(comp.molar_weight, wind_speed)
+                                kg = vo.gas_phase_exchange_coef(comp.molar_weight, wind_speed, current_speed)
+                                K = vo.mass_transfer_coefficient(nd_henry, kg, kl)
+                                conc =  matrix[i-1,3,j] * comp.density/(water_volume)
+                                flux = vo.mass_flux_lyman(K, conc, henry, comp.molar_weight)
+                        elif apply_volatilization == 2:
+                                henry = vo.henry_chemmap(comp.molar_weight, comp.solubility,
+                                                        comp.get_partial_P(temperature))
 
-                        if henry >= 3e-7:
-                            k = vo.volatilization_coef(comp.molar_weight,
-                                                    henry, temperature)
-                            rate = vo.volatilization_rate(k, matrix[i-1,3,j], 1e-3, dt)
-                            flux = rate*dt / comp.get_density(temperature)
-                            if flux > matrix[i-1,3,j]:
-                                flux = matrix[i-1,3,j]
-                            vol_fl[j] = flux
+                                if henry >= 3e-7:
+                                    k = vo.volatilization_coef_chemmap(comp.molar_weight,
+                                                                henry, temperature)
+                                    rate = vo.volatilization_rate_chemmap(k, matrix[i-1,3,j], 1e-3, dt)
+                                    flux = rate*dt / comp.get_density(temperature)
+
+                        if flux > matrix[i-1,3,j]:
+                            flux = matrix[i-1,3,j]
+                        vol_fl[j] = flux
             #evaporation fingas
             if apply_evaporation == 3:
                 c1 = mix.fingas1
@@ -303,7 +318,6 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
             matrix[i,j,len(mix.list_component)] = sum(matrix[i,j,0:len(mix.list_component)])
 
     return matrix
-
 
 
 
