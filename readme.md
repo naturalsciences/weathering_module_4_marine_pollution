@@ -64,6 +64,8 @@ Nordam, T., 2020. Modelling biodegradation of crude oil components at low temper
 
 OSERIT manual 2012, https://www.belspo.be/belspo/ssd/science/Reports/OSERIT_FinRep_AD.pdf
 
+Riazi, M.R., Al-Otaibi, G.N., 2001. Estimation of viscosity of liquid hydrocarbon systems. Fuel 80, 27–32. https://doi.org/10.1016/S0016-2361(00)00071-5 
+
 Scory, S. (2005) The use of mathematical models for estimating oil pollution damage at sea, in: Maes, F. Ed. Marine resource damage assessment: liability and compensation for environmental damage. pp. 211-252.
 
 Shen, H.T., Yapa, P.D., Wang, D.S., Yang, X.Q., 1993. A Mathematical Model for Oil Slick Transport and Mixing in Rivers 79.

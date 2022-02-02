@@ -15,18 +15,18 @@ import oil_utils as ou  #contains the objects needed
 Defining the initials conditions
 """
 #amount of each mix
-amount_init = 1000 #[m³]
+amount_init = 100 #[m³]
 #amount of water in which the component will be dissolved
 water_volume = amount_init*1000 #[m³]
 #length of a timestep (can be between 0 and 1 or bigger)
-dt = 30    #[s]
+dt = 300    #[s]
 #length of the simulation
-sim_length = 3600 * 24 * 1 #[s]
+sim_length = 3600 * 24 * 5 #[s]
 #speed of the wind at 10 meters
-wind_speed = 5 #[m/s]
-temperature = 273.15 +20 #[K]
+wind_speed = 8 #[m/s]
+temperature = 273.15 +15 #[K]
 wave_heigth = 1 #[m]
-slick_thickness = 2.3e-2 #[m], totally arbitrary here
+slick_thickness = 100e-6 #[m], totally arbitrary here
 
 
 """

@@ -651,7 +651,7 @@ def evap_fract_time_fingas(heavy, c1, time, T, c2 = None):
 def evap_volume_OILTRANS(k, area, p_oil, molar_v, T, molar_fraction = 1,
                          R = 8.314):
     """
-    Return the evaporated fraction by unit of time [/s]
+    Return the evaporated volume by unit of time [m³/s]
     source : (Berry et al., 2012)
 
     Parameters

@@ -9,6 +9,7 @@ import math
 import numpy as np
 import evaporation as ev
 import weathering_utils as wu
+import viscosity as vis
 
 def interp(val, array_value, array_ref):
     """
@@ -271,14 +272,32 @@ class mix:
             if component.density is not None and  component.molar_weight is None:
                component.molar_weight = component.density * component.molar_volume
 
-def get_mix_viscosity(mix, array_in_emulsion):
-    """
-    Return the viscosity of the mix, array_in_emulsion is an array with the amount
-    of each component in emulsion
-    """
-    #if there is less than 1% of emulsion, we make the log sum of viscosity
-    #TODO
-    pass
+    def get_mix_viscosity(self, temperature):
+        """
+        Return the viscosity of the mix using viscosity and freezing point of each
+        component
+        """
+        freezing_p_distrib = 1 #normalized
+        if len(self.list_component) <= 0:
+            raise Exception("This mixture has no component!")
+        elif len(self.list_component) == 1:
+            molar_sum = self.list_component[0].amount / self.list_component[0].molar_volume
+        else:   #combine the components
+            molar_sum = 0
+            for comp in self.list_component:
+                molar_sum += comp.amount / comp.molar_volume
+        visc_sum = 0
+        for comp in self.list_component:
+            x = comp.amount / comp.molar_volume / molar_sum
+            if comp.freezing_T is not None:
+                if comp.freezing_T <= temperature:
+                    freezing_p_distrib -= x
+
+            visc_sum = x * math.log(comp.get_viscosity(temperature))
+        viscosity_ideal = mat.pow(math.e,visc_sum)
+
+        return 1/(1/viscosity_ideal * math.pow(freezing_p_distrib,1-freezing_p_distrib))
+
 
 
 def get_emulsion_density(mix, T, array_in_emulsion, water_density = 1020):
@@ -311,7 +330,7 @@ class component:
     h_l_phot = None #[1/s]
     h_l_biod = None #[1/s]
     solubility = None #[kg/m³]
-
+    freezing_T = None #[K]
 
     def __init__(self, name, amount = 0):
         self.name = name
@@ -338,7 +357,7 @@ class component:
         else:
             return self.partial_P
 
-    def compute_enthalpy(self):
+    def compute_enthalpy(self, atm_p = 101325):
         """
         Return an estimation of the vap_enthalpie from a vapor pressure at a
         certain temperature an the ebulition temperature. It suppose the
@@ -352,7 +371,7 @@ class component:
         if self.ref_T_Clau is None:
             raise Exception("The ref_T_Clau must be defined for this")
 
-        num = - 8.314 *math.log(self.boiling_T/self.partial_P)
+        num = - 8.314 *math.log(self.partial_P/atm_p)
         den = self.molar_weight* (1/self.boiling_T-1/self.ref_T_Clau)
         self.vap_enthalpie =  num/den
 
@@ -363,9 +382,19 @@ class component:
 
         """
         self.molar_volume = self.molar_weight/self.density
+        #print(self.name, ":", int(self.molar_volume*1000000)/1000," [l/mol]")
 
-
-
+    def get_viscosity(self, T):
+        """
+        Compute the viscosity of the component [Pa s]
+        """
+        if self.molar_weight is None:
+            raise Exception("The molar_weight must be defined for computing viscosity")
+        if self.boiling_T is None:
+            raise Exception("The boiling_T must be defined for computing viscosity")
+        if self.density is None:
+            raise Exception("The density must be defined for computing viscosity")
+        return vis.viscosity(T,self.boiling_T, self.molar_weight, self.density)
 
 def to_half_life(days):
     """
