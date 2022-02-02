@@ -120,13 +120,13 @@ def volatilization_coef_chemmap(molar_weight, henry, temperature, R = 8.206e-5):
     molar_weight[kg/mol] (in the ref, the dimension is not defined)
     henry: henry constant
     temperature: temperature[K]
-    R : gaz constant [atm m³ K / mole]
+    R : gaz constant [atm m³ K / mol]
     """
     if henry < 3e-7:
         raise Exception("Volatilization should be neglected with this constant")
     h = henry /(R*temperature)
 
-    mw = molar_weight / 1000
+    mw = molar_weight *1000000
     a = 20 * math.sqrt(44/mw)
     b = 300 * math.sqrt(18/mw)
     k = (h*a*b)/(h*b+a) /(100*3600) #from cm/hr to m/s
@@ -136,7 +136,7 @@ def volatilization_coef_chemmap(molar_weight, henry, temperature, R = 8.206e-5):
 
 def henry_chemmap(molar_weight, solubility, vapor_pressure):
     """
-    Return the henry's law constant []. if < 3e-7, can be neglected
+    Return the henry's law constant [atm m³/mol]. if < 3e-7, can be neglected
     source : (“CHEMMAP technical User’s manual 6.10,” 2014)
 
     params
@@ -146,8 +146,8 @@ def henry_chemmap(molar_weight, solubility, vapor_pressure):
     vapor_pressure [Pa]
     """
     P = vapor_pressure/101325
-    s = solubility * 1000
-    mw = molar_weight / 1000
+    s = solubility
+    mw = molar_weight
 
     return P / (s/mw)
 
@@ -164,5 +164,4 @@ def volatilization_rate_chemmap(k, mass, dz, dt):
     dt : length of a timestep [s]
     mass: mass of the pollutant [kg]
     """
-
     return k * mass / math.sqrt(2 * dz * dt)

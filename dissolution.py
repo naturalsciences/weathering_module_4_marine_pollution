@@ -76,7 +76,7 @@ def molar_volume_Le_Bas(MW, organic = True):
         return 2.8047 * (MW/1000)**0.651
 
 
-def sherwood_slick(schmdt_nmbr, wind_speed, L, wat_kin_visc = 10**-6):
+def sherwood_slick(schmdt_nmbr, speed, L, wat_kin_visc = 10**-6):
     """
     Return the average sherwood number for a slick []
     source : (HNS-MS)
@@ -84,13 +84,13 @@ def sherwood_slick(schmdt_nmbr, wind_speed, L, wat_kin_visc = 10**-6):
     Parameters
     ----------
     schmdt_nmbr : Schmidt number []
-    wind_speed : Wind speed (10 meters?) [m/s]
+    speed : Speed for the reynolds [m/s]
     L : Diameter of the slick [m]
     wat_kin_visc : Kinematic viscosity of water, the default is 10**-6 [m²/s]
 
 
     """
-    re = wind_speed * L/ wat_kin_visc
+    re = speed * L/ wat_kin_visc
     return 0.578 * schmdt_nmbr**(1/3) * math.sqrt(re)
 
 
@@ -102,7 +102,7 @@ def sherwood_droplet(schmdt_nmbr, r_velocity, L, wat_kin_visc = 10**-6):
     Parameters
     ----------
     schmdt_nmbr : Schmidt number []
-    wind_speed : Wind speed (10 meters?) [m/s]
+    r_velocity: resultant velocity on the droplet [m/s]
     L : Diameter of the droplet [m]
     wat_kin_visc : Kinematic viscosity of water, the default is 10**-6 [m²/s]
 

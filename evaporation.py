@@ -266,9 +266,7 @@ def mass_transfer_coefficient_ALOHA(Dp, Re, sc, n, k = 0.4, y = 0.577, SCt = 0.8
     SCt : Turbulent schmidt number, equals to 0.85
     z : Surface roughness lenght [m]. The default for open sea is 0.0002 m (wikipedia)
 
-
     """
-
     X = (n*k**2*Dp)/(SCt*z*math.e**(1/n))
 
     smooth = (3.85*sc**(1/3)-1.3)**2 + SCt/k*math.log(0.13*sc)
