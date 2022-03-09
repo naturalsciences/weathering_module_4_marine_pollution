@@ -15,8 +15,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import copy
 import math
+<<<<<<< HEAD
 import numpy as np
 
+=======
+import csv
+>>>>>>> 47ab9a04cb38f60ea24a9c5e2eae49df8457476a
 
 MAX_EVAPORATIVE_TEMP = 573.15
 
@@ -28,6 +32,35 @@ def to_half_life(days):
     """
     s= 24 * 3600 * days
     return -math.log(1/2)/s
+
+def create_csv(mix, matrix, name, path = ""):
+    """
+    Create a csv file with the results of the simulation
+
+    params
+    ------
+    mix : mix represented by the matrix
+    matrix : matrix ordered following (with the last row of comp being the sum):
+        time [s]
+        slick [m³]
+        evaporated [m³]
+        dissolved [m³]
+        biodegraded [m³]
+        photooxided [m³]
+        emulsified [m³]
+    name: name of the file (without .csv)
+    path: path of the file if not in the same directory as the script
+    """
+    ind_tot = len(mix.list_component)
+    with open(path+name+'.csv','w') as csv_file:
+        csv_writer = csv.writer(csv_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        csv_writer.writerow(['time [s]', 'remaining [m³]','evaporated [m³]','dissolved [m³]',
+                            'biodegraded [m³]','photooxided [m³]','emulsified [m³]'])
+        for i in range(len(matrix[:,0,0])):
+            csv_writer.writerow([matrix[i,0,ind_tot],matrix[i,1,ind_tot],matrix[i,2,ind_tot],
+                                matrix[i,3,ind_tot],matrix[i,4,ind_tot],matrix[i,5,ind_tot],
+                                matrix[i,6,ind_tot]])
+
 
 
 def plot_matrix_mix(mix, matrix, title_add = "", percent = False):
@@ -255,35 +288,6 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
                             comp.amount -= flux
                             phot_fl[j]=flux
 
-                #volatilization
-                if apply_volatilization > 0 and matrix[i-1,3,j] > 0:
-                    if (comp.get_partial_P(temperature) is not None
-                            and comp.solubility is not None
-                            and comp.molar_weight is not None):
-                        flux = 0
-                        if apply_volatilization == 1:
-                            henry = vo.henry(comp.get_partial_P(temperature), comp.solubility,
-                                                comp.molar_weight)
-                            if henry > 3e-7:
-                                nd_henry = vo.nondimensional_henry(henry, temperature)
-                                kl = vo.liquid_phase_exchange_coef(comp.molar_weight, wind_speed)
-                                kg = vo.gas_phase_exchange_coef(comp.molar_weight, wind_speed, current_speed)
-                                K = vo.mass_transfer_coefficient(nd_henry, kg, kl)
-                                conc =  matrix[i-1,3,j] * comp.density/(water_volume)
-                                flux = vo.mass_flux_lyman(K, conc, henry, comp.molar_weight)
-                        elif apply_volatilization == 2:
-                                henry = vo.henry_chemmap(comp.molar_weight, comp.solubility,
-                                                        comp.get_partial_P(temperature))
-
-                                if henry >= 3e-7:
-                                    k = vo.volatilization_coef_chemmap(comp.molar_weight,
-                                                                henry, temperature)
-                                    rate = vo.volatilization_rate_chemmap(k, matrix[i-1,3,j], 1e-3, dt)
-                                    flux = rate*dt / comp.get_density(temperature)
-
-                        if flux > matrix[i-1,3,j]:
-                            flux = matrix[i-1,3,j]
-                        vol_fl[j] = flux
             #evaporation fingas
             if apply_evaporation == 3:
                 c1 = mix.fingas1
@@ -321,24 +325,39 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
                     emul_fl[0:len(mix.list_component)] = -mix.add_amount(-flux)
 
         #volatilization (after because comp.amount can be ==0)
-        if apply_volatilization == 1:
+        if apply_volatilization > 0:
             for j in range(0, len(mix.list_component)):
                 comp = mix.get_comp(j)
                 if matrix[i-1,3,j] > 0:
                     if (comp.get_partial_P(temperature) is not None
                             and comp.solubility is not None
                             and comp.molar_weight is not None):
-                        henry = vo.henry(comp.molar_weight, comp.solubility,
-                                            comp.get_partial_P(temperature))
+                        flux = 0
+                        if apply_volatilization == 1:
+                            henry = vo.henry(comp.get_partial_P(temperature), comp.solubility,
+                                                comp.molar_weight)
+                            if henry > 3e-7:
+                                nd_henry = vo.nondimensional_henry(henry, temperature)
+                                kl = vo.liquid_phase_exchange_coef(comp.molar_weight, wind_speed)
+                                kg = vo.gas_phase_exchange_coef(comp.molar_weight, wind_speed, current_speed)
+                                K = vo.mass_transfer_coefficient(nd_henry, kg, kl)
+                                conc =  matrix[i-1,3,j] * comp.density/(water_volume)
+                                flux = vo.mass_flux_lyman(K, conc, henry, comp.molar_weight)
+                                flux = flux * dt * area / comp.get_density(temperature)
 
-                        if henry >= 3e-7:
-                            k = vo.volatilization_coef(comp.molar_weight,
-                                                    henry, temperature)
-                            rate = vo.volatilization_rate(k, matrix[i-1,3,j], vertical_diff, dt)
-                            flux = rate*dt / comp.get_density(temperature)
-                            if flux > matrix[i-1,3,j]:
-                                flux = matrix[i-1,3,j]
-                            vol_fl[j] = flux
+                        elif apply_volatilization == 2:
+                                henry = vo.henry_chemmap(comp.molar_weight, comp.solubility,
+                                                        comp.get_partial_P(temperature))
+
+                                if henry >= 3e-7:
+                                    k = vo.volatilization_coef_chemmap(comp.molar_weight,
+                                                                henry, temperature)
+                                    rate = vo.volatilization_rate_chemmap(k, matrix[i-1,3,j], 1e-3, dt)
+                                    flux = rate*dt / comp.get_density(temperature)
+
+                        if flux > matrix[i-1,3,j]:
+                            flux = matrix[i-1,3,j]
+                        vol_fl[j] = flux
 
         matrix[i,1,0:len(mix.list_component)] = mix.get_array_amount()
         matrix[i,2] = ev_fl + matrix[i-1,2] + vol_fl
