@@ -432,7 +432,6 @@ def vapor_pressure_eb_T(eb_T, T, atm_P = 101325, R = 1.987, Kf = 1.06):
 
     a = (dsi * (eb_T-c2)**2 )/(R*eb_T*0.97)
     b = (1/(eb_T-c2)-1/(T-c2))
-    #print(eb_T,dsi, c2, a, b)
     return atm_P * math.exp(a*b)
 
 

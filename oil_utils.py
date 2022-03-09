@@ -231,7 +231,7 @@ class mix:
         return array_tr
 
 
-    def get_density(self, T):
+    def get_initial_density(self, T):
         """
         Return the density[kg/m³] interpolated at the value T [K]
         """
@@ -272,6 +272,18 @@ class mix:
             if component.density is not None and  component.molar_weight is None:
                component.molar_weight = component.density * component.molar_volume
 
+    def get_mix_density(self):
+        """
+        Return the density of the mix by sum of the component
+        """
+        volume = 0
+        mass = 0
+        for component in self.list_component:
+            volume += component.amount
+            mass += component.amount * component.get_density()
+        return mass/volume
+
+
     def get_mix_viscosity(self, temperature):
         """
         Return the viscosity of the mix using viscosity and freezing point of each
@@ -292,9 +304,9 @@ class mix:
             if comp.freezing_T is not None:
                 if comp.freezing_T <= temperature:
                     freezing_p_distrib -= x
-
-            visc_sum = x * math.log(comp.get_viscosity(temperature))
-        viscosity_ideal = mat.pow(math.e,visc_sum)
+            if comp.get_viscosity(temperature) > 0:
+                visc_sum += x * math.log(comp.get_viscosity(temperature))
+        viscosity_ideal = math.pow(math.e,visc_sum)
 
         return 1/(1/viscosity_ideal * math.pow(freezing_p_distrib,1-freezing_p_distrib))
 

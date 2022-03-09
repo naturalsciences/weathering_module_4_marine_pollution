@@ -115,5 +115,4 @@ def viscosity(T, Teb, M, rho):
     Tbr = riazi_reduced_Teb(Teb)
     A = riazi_A(Tbr, M, S, I20)
     B = riazi_B(Tbr, M, S, I20)
-    print("S ",S,"  I20 ",I20,"  I ",I,"  Tbr ",Tbr,"  A ",A,"  B ",B)
     return riazi_viscosity(A, B, I)

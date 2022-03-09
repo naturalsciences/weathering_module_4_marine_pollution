@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import copy
 import math
+import numpy as np
 
 
 MAX_EVAPORATIVE_TEMP = 573.15
@@ -125,15 +126,15 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
     wave_height : Wave height [m]
     current_speed : Current speed [m/s]
     speed_for_dis: the speed of the molecule for the dissolution[m/s]
-    start_dis: if True, will start di        print(matrix[0,3,ind_tot])ssolved and not in slick
+    start_dis: if True, will start dissolved and not in slick
     """
-
-    if fix_area != None and type(fix_area) != list:
-        area = fix_area
-        fix_area = []
-        for i in range(0, int(sim_length/dt)):
-            fix_area.append(area)
-
+    #In case of an area which vary trought time
+    if type(fix_area) != list and type(fix_area) != np.ndarray:
+        if fix_area != None:
+            area = fix_area
+            fix_area = []
+            for i in range(0, int(sim_length/dt)):
+                fix_area.append(area)
     time_step_amount = int(sim_length / dt)
     matrix = np.zeros((int(time_step_amount),7, len(mix.list_component)+1))
     #allocation of the components in the matrix
@@ -150,7 +151,6 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
 
     if apply_emulsion > 0:
         max_wat = mix.max_water
-
     for i in range(1,time_step_amount):
         matrix[i,0,:] = i * dt
 
@@ -347,9 +347,9 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
         matrix[i,5] = phot_fl  + matrix[i-1,5]
         matrix[i,6] = emul_fl  + matrix[i-1,6]
         #sums
+
         for j in range(1,7):
             matrix[i,j,len(mix.list_component)] = sum(matrix[i,j,0:len(mix.list_component)])
-
     return matrix
 
 
