@@ -16,6 +16,9 @@ def interp(val, array_value, array_ref):
     Interpolate the array_value from the array_ref with val. The array_ref
     must be in an increasing order!
     """
+    if (len(array_ref) == 1):
+        return array_value[0]
+
     if val <= array_ref[0]:
         return array_value[0]
     elif val > array_ref[len(array_ref)-1]:
@@ -237,11 +240,19 @@ class mix:
         """
         return interp(T, self.density, self.density_T)
 
-    def get_viscosity(self, T):
+    def get_initial_viscosity(self, T, Ctmp = 5000):
         """
-        Return the viscosity[Pa s] interpolated at the value T [K]
+        Return the viscosity[Pa s] at the temperature T [K]
         """
-        return interp(T, self.viscosity, self.viscosity_T)
+        dist = 99999
+        index = 0
+        for i in range(len(self.viscosity_T)):
+            delta = abs(self.viscosity_T[i]-T)
+            if(delta < dist):
+                index = i
+                dist = delta
+
+        return self.viscosity[index] * math.exp(Ctmp*(self.viscosity_T[index]-T)/(self.viscosity_T[index]*T))
 
 
     def get_array_amount(self):

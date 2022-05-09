@@ -191,23 +191,24 @@ def time_to_emulsion(eml_type, wave_height):
 
 
 
-def wat_volume_OSERIT(surfc_amount, wave_height, k_em, max_wat_cont = 0.8, c1 = 5e7):
+def volume_OSERIT(surfc_amount, wave_height, k_em, dt, max_wat_cont = 0.8, c1 = 2000000):
     """
-    Return the emulsification volumic rate [m³/s] from OSERIT
+    Return the remaining surface volumic [m³/s] from OSERIT
     source : OSERIT manual
 
     Parameters
     ----------
     surfc_amount : Oil volume at the surface [m³]
     wave_height : Significant wave height [m]
+    dt : timestep length [s]
     k_em : Oil ability to form emulsion (0-120)
         max_wat_cont : Maximum water content, the default is 0.8
-    c1 : Constant, the default is 5e-7
+    c1 : Constant, the default is 2000000
 
 
 
     """
-    return max_wat_cont/(1-max_wat_cont)*k_em/c1*wave_height*surfc_amount
+    return surfc_amount*math.exp(-max_wat_cont/(1-max_wat_cont)*k_em/c1*wave_height*dt)
 
 
 

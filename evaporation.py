@@ -150,48 +150,17 @@ def schmdt_nmbr_MW_chemmap(MW):
     return 0.15/(Dref * (MWref/(MW*1000))**-(1/2))
 
 
-def schmdt_nmbr_laminar(kc, kinematic_visc = 1.516e-5):
+def schmdt_nmbr_air(kc, kinematic_visc = 1.516e-5):
     """
     Return the laminar Schmidt number [], it uses air coefficient as default
-    source : ALOHA
 
     Parameters
     ----------
     kc : molecular diffusivity [m²/s]
-    kinematic_visc : kinematic viscosity of air, default 1.516e-5 [m²/s] (20°C)
+    kinematic_visc : kinematic viscosity of air, default 1.516e-5 [m²/s] (20°C ALOHA)
 
     """
     return kinematic_visc/kc
-
-
-def mass_transfer_coefficient_george(D, u, L, MmS, T, p_oil,
-                                     molar_volume, R = 8.314, vis = 1.48*10**-5,
-                                     Mminf = 0.02896, atm_p = 101325 ):
-    """
-    Return the mass transfert coefficient alpha
-    source : (Kotzakoulakis and George, 2018)
-
-    Parameters
-    ----------
-    D : Diffusion coefficient in air [m²/s]
-    u : Air velocity [m/s]
-    L : Length of the spill in the wind direction [m]
-    MmS : Molar mass of air and vapor right above the spill [kg/mol]
-    T : Temperature [K]
-    p_oil : Vapor pressure of the oil [Pa]
-    molar_volume : Molar volume of the liquid at the surface [m³/mol]
-    R : Perfect gas constant, the default is 8.314 [J/mol K]
-    vis : Kinematic viscosity of air : 1.48*10**-5 [m²/s]
-    Mminf : Molar mass of air away from the spill, default is 0.02896 [kg/mo]
-    atm_P : Atmospheric pressure [Pa] the default is 101 325 Pa
-
-
-    """
-    log_p = p_oil / math.ln(atm_p/(atm_p-p_oil))
-    a = MmS / Mminf
-    b = -0.662 * D**(2/3) * vis**(-1/6) * math.sqrt(u * L) / L * math.ln(a)
-    return b / (a-1) * atm_p / log_p * p_oil * molar_volume / (R * T)
-
 
 
 def mass_transfer_coefficient_mackay_matsugu(wind_speed, diameter, schmdt_nmbr,
@@ -220,7 +189,7 @@ def mass_transfer_coefficient_mackay_matsugu(wind_speed, diameter, schmdt_nmbr,
 def mass_transfer_coefficient_mishra_kumar(wind_speed):
     """
     Return the mass transfert coefficient [m/s] only from wind speed
-    source:(Berry et al., 2012)
+    source:(Mishra and Kumar, 2015)
 
     Parameters
     ----------
@@ -512,27 +481,6 @@ def pasquill_stability(stability_class):
         'F': 0.253
     }
     return switcher.get(stability_class, None)
-
-
-
-def massic_rate_sutton(k, conc_evaporating_fluid,
-                       wind_speed, pool_area, schmdt_nmbr, r):
-    """
-    Return the evaporation rate [kg/s m²] of sutton's model
-    source : (Fingas, 2015)
-
-    Parameters
-    ----------
-    k : mass transsfert coefficent [1/m²]
-    conc_evaporating_fluid : Concentration of the evaporating fluid [kg/m³]
-    wind_speed : Wind speed 10 meters above the surface [m/s]
-    pool_area : Area of the pool []
-    schmdt_nmbr :  Schmidt number []
-    r : empirical (0->2/3) []
-
-    """
-    return (k * conc_evaporating_fluid
-         * (wind_speed**(7/9)) * (pool_area**(1/9)) * (schmdt_nmbr**r))
 
 
 def molar_rate_mackay_matsugu(k, p_oil, T, R = 8.314, p_bulk = 0):

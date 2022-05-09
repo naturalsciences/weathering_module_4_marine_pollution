@@ -15,12 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import copy
 import math
-<<<<<<< HEAD
-import numpy as np
-
-=======
 import csv
->>>>>>> 47ab9a04cb38f60ea24a9c5e2eae49df8457476a
 
 MAX_EVAPORATIVE_TEMP = 573.15
 
@@ -229,7 +224,7 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
                             wind_friction = ev.wind_friction_velocity(wind_speed, n)
                             Re = ev.roughness_reynolds(wind_friction)
                             kc = ev.graham_law(comp.molar_weight)
-                            sc = ev.schmdt_nmbr_laminar(kc)
+                            sc = ev.schmdt_nmbr_air(kc)
 
                             k = ev.mass_transfer_coefficient_ALOHA(length, Re, sc, n)
 
@@ -305,11 +300,11 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
             if apply_emulsion > 0 and mix.get_prop(temperature).amount > 0:
                 #OSERIT
                 if apply_emulsion == 1:
-                    eml_rate = em.wat_volume_OSERIT(mix.get_prop(temperature).amount,wave_height, mix.K_em)*dt
-                    flux = eml_rate/max_wat - eml_rate
+                    remaining = em.volume_OSERIT(mix.get_prop(temperature).amount,wave_height, mix.K_em, dt,max_wat_cont = max_wat)
+                    flux = mix.get_prop(temperature).amount-remaining
                     if mix.get_prop(temperature).amount < flux:
                         flux = mix.get_prop(temperature).amount
-                    emul_fl[0:len(mix.list_component)] = mix.add_amount(-flux)
+                    emul_fl[0:len(mix.list_component)] = -mix.add_amount(-flux)
                 #MACKAY
                 elif apply_emulsion == 2:
                     wat_amount = matrix[i-1,6,len(mix.list_component)] /(1-max_wat)*max_wat
@@ -365,8 +360,6 @@ def compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volum
         matrix[i,4] = bio_fl  + matrix[i-1,4]
         matrix[i,5] = phot_fl  + matrix[i-1,5]
         matrix[i,6] = emul_fl  + matrix[i-1,6]
-        #sums
-
         for j in range(1,7):
             matrix[i,j,len(mix.list_component)] = sum(matrix[i,j,0:len(mix.list_component)])
     return matrix
