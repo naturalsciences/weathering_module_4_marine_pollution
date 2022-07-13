@@ -8,6 +8,23 @@ Created on Jan 26 09:42:32 2022
 import math
 
 
+def estimate_viscosity(visc_init, T_init, T, fevap, fw, Cevap = 10,
+                        Cemls1 = 2.5, Cemls2 = 0.65, Ctemp = 5000):
+    """
+    Return the viscosity [Pa s]
+    source: (Lerh, 2002)
+    params
+    ------
+    visc_init: initial viscosity [Pa s]
+    T_init: temperature of the measurment of visc_init [K]
+    T: temperature [K]
+    fevap: evaporated fraction (0-1)[]
+    fw: water fraction (0-1)[]
+    """
+    return visc_init * math.exp(Cemls1*fw/(1-Cemls2*fw)+Cevap*fevap+Ctemp*(1/T-1/T_init))
+
+
+
 def riazi_viscosity(A, B, I):
     """
     Return the viscosity [Pa s]

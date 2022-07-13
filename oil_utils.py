@@ -167,14 +167,12 @@ class mix:
 
             #1: computing the density from the components
             density = 0
-            for comp in self.list_component:
-                if comp.get_density(T) is not None and comp.amount > 0:
-                    density += comp.amount * comp.get_density(T) / tot_amount
+            density = self.get_mix_density()
 
             #2: if not from components, take the defaut
             if density == 0:
                 if len(self.density) > 0:
-                    density = self.get_density(T)
+                    density = interp(T, self.density, self.density_T)
                 elif mass_sum is not None and tot_amount != 0:
                     density = mass_sum/tot_amount
                 else:
@@ -395,7 +393,7 @@ class component:
             raise Exception("The ref_T_Clau must be defined for this")
 
         num = - 8.314 *math.log(self.partial_P/atm_p)
-        den = self.molar_weight* (1/self.boiling_T-1/self.ref_T_Clau)
+        den = self.molar_weight* (1/self.ref_T_Clau-1/self.boiling_T)
         self.vap_enthalpie =  num/den
 
 
