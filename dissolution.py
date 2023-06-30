@@ -51,7 +51,7 @@ def diffusion_coefficient(mol_vol, wat_viscosity = 10**-3):
 
     Parameters
     ----------
-    mol_vol : Molar volume of the component [mol/m³]
+    mol_vol : Molar volume of the component at the boiling point [mol/m³]
     wat_viscosity : Dynamic viscosity of water [Pa s]
 
     """
@@ -71,9 +71,9 @@ def molar_volume_Le_Bas(MW, organic = True):
 
     """
     if organic:
-        return 4.9807  * (MW/1000)**0.6963
+        return 4.9807  * (MW*1000)**0.6963 / 100**3
     else:
-        return 2.8047 * (MW/1000)**0.651
+        return 2.8047 * (MW*1000)**0.651 / 100**3
 
 
 def sherwood_slick(schmdt_nmbr, speed, L, wat_kin_visc = 10**-6):
