@@ -4,13 +4,13 @@ Created on Mon Apr 19 13:41:10 2021
 
 @author: Ludovic Lepers
 """
-import evaporation as ev
-import dissolution as di
-import photooxidation as ph
-import biodegradation as bi
-import emulsification as em
-import volatilization as vo
-import oil_utils as otl
+from . import evaporation as ev
+from . import dissolution as di
+from . import photooxidation as ph
+from . import biodegradation as bi
+from . import emulsification as em
+from . import volatilization as vo
+from . import oil_utils as otl
 import matplotlib.pyplot as plt
 import numpy as np
 import copy

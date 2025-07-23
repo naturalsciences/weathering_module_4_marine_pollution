@@ -8,8 +8,7 @@ Do not hesitate to look into the others python files for more information on the
 """
 
 import copy
-import weathering_utils as wu  #contains fonctions
-import oil_utils as ou  #contains the objects needed
+import weathering_mar_pol as wmp  #contains the objects needed
 
 """
 Defining the initials conditions
@@ -35,7 +34,7 @@ Creating a mix for an oil and weathering it
 
 brent_blend_cut_T = [40,80,100,120,150,160,180,200,250,300,350,400,500,600,700]
 brent_blend_fract = [3.0,4.0,5.0,19.0,22.0,25.0,29.0,32.0,42.0,52.0,62.0,70.0,85.0,95.0,99.0]
-brent_blend = ou.mix('BRENT BLEND') #creating a mix for applying weathering on it
+brent_blend = wmp.mix('BRENT BLEND') #creating a mix for applying weathering on it
 #use the two vectors defined earlier to generate pseudo components. The first
 #one is about temperature and the second is the cumulative fraction distillated
 #compute also
@@ -54,11 +53,11 @@ brent_blend.add_Fingas(3.39, 0.048)
 mix = copy.deepcopy(brent_blend)
 
 #create a matrix with the state of the mix at each timestep
-mat = wu.compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volume,
+mat = wmp.compute_weathering(mix, temperature, wind_speed, sim_length, dt, water_volume,
                             slick_thickness)
 
 #draw the graph
-wu.plot_matrix_mix(mix, mat)
+wmp.plot_matrix_mix(mix, mat)
 
 
 """
@@ -66,8 +65,8 @@ Creating a mix of xyleme and toluene and weathering it
 
 """
 
-mix2 = ou.mix('Xylene and Toluene')
-xyl = ou.component('Xyleme',amount_init/2)#HNS MS 20°C
+mix2 = wmp.mix('Xylene and Toluene')
+xyl = wmp.component('Xyleme',amount_init/2)#HNS MS 20°C
 xyl.density = 870
 xyl.molar_weight = 0.10616
 xyl.boiling_T = 140.2+273.15
@@ -79,7 +78,7 @@ xyl.compute_molar_volume()
 mix2.add_component(xyl)
 
 
-tol = ou.component('Toluene',amount_init/2)#HNS MS 20°C
+tol = wmp.component('Toluene',amount_init/2)#HNS MS 20°C
 tol.density = 868.3
 tol.molar_weight = 0.09215
 tol.boiling_T = 110.58+273.15
@@ -89,7 +88,7 @@ tol.vap_enthalpie = 412480
 tol.solubility = 110e-3
 tol.compute_molar_volume()
 #tranform a number of day into a half life
-tol.h_l_biod = wu.to_half_life(30)
+tol.h_l_biod = wmp.to_half_life(30)
 
 
 mix2.add_component(tol)
@@ -103,12 +102,12 @@ for i in range(0, int(sim_length/dt)):
 
 #create a matrix with the state of the mix at each timestep
 #the 2 means ALOHA model
-mat = wu.compute_weathering(mix2, temperature, wind_speed, sim_length, dt, water_volume,
+mat = wmp.compute_weathering(mix2, temperature, wind_speed, sim_length, dt, water_volume,
                      slick_thickness, fix_area=area, apply_evaporation =2,
                      wave_height=wave_heigth)
 
 #draw the graph
-wu.plot_matrix_mix(mix2, mat)
+wmp.plot_matrix_mix(mix2, mat)
 
 
 
@@ -117,9 +116,9 @@ Using emulsion with the brent blend
 
 """
 # deepcopy not needed because brent_blend is not used later
-mat = wu.compute_weathering(brent_blend, temperature, wind_speed, sim_length, dt, water_volume,
+mat = wmp.compute_weathering(brent_blend, temperature, wind_speed, sim_length, dt, water_volume,
                      slick_thickness, fix_area = area, apply_evaporation = 3,
                      apply_emulsion = 1, wave_height=wave_heigth)
 
 #draw the graph
-wu.plot_matrix_mix(brent_blend, mat)
+wmp.plot_matrix_mix(brent_blend, mat)

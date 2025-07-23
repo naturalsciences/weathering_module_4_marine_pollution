@@ -8,7 +8,7 @@ TODO: put friction velocity out of fernandez?
 """
 import math
 import numpy as np
-import evaporation as ev
+from . import evaporation as ev
 
 def solubility_time(init_s, time, a = -0.1/3600):
     """

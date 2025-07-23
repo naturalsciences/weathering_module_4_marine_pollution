@@ -7,9 +7,9 @@ Created on Thu Mar 18 13:20:25 2021
 
 import math
 import numpy as np
-import evaporation as ev
-import weathering_utils as wu
-import viscosity as vis
+from . import evaporation as ev
+from . import weathering_utils as wu
+from . import viscosity as vis
 
 def interp(val, array_value, array_ref):
     """

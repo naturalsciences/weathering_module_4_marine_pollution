@@ -10,8 +10,8 @@ This simple python module is a simplified version of the OSERIT model, able to m
 ## General info
 The module can be used to model HNS substance or oil weathering. It needs some input such as the temperature or the windspeed. It allows for pure chemicals and for pseudo-component chemicals by providing an object Mix and an object Component (in oil_utils.py), and some equation to compute the evolution of it (in weathering_utils.py). There is a file "example.py" wich allows to understand how the code is working. There is also a list of parametrization function in the files describing the weathering processes (evaporation.py, dissolution.py, photooxidation.py, emulsification.py, biodegradation.py...) which can be used. All the sources for these parametrization are in the references section. The file polludrome.py run simulation on the same parameters than the polludrome and with the value of the properties of the oil used in the IMAROS project.
 
-## Technologies
-The project need python and numpy to work.
+## Installation
+Run `pip install .` in the clone repository. This will install the weathering_mar_pol module in your current Python environment.
 
 ## License
 Shield: [![CC BY 4.0][cc-by-shield]][cc-by]
