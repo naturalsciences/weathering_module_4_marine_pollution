@@ -53,8 +53,8 @@ class mix:
 
         Parameters
         ----------
-        temp : Temperature vector
-        fraction : Fraction vector
+        temp : Temperature vector °C
+        fraction : Fraction vector (volume) in % (0-100)
         tot_amount : Amount of the mix [m³]
 
         Raises
